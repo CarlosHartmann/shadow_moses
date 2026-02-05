@@ -1,0 +1,35 @@
+poetry run python otacon/main.py \
+--input /Volumes/Limbo/reddit/comments \
+--output output/OP/2010 \
+--time_from 2010-01 \
+--time_to 2010-12 \
+--toplevel \
+--no_stats \
+--reservoir_size 1000 \
+--commentregex '(?<![-\w])OP(?![-\w])' \
+--case_sensitive \
+--firstmatch;
+
+poetry run python otacon/main.py \
+--input /Volumes/Limbo/reddit/comments \
+--output output/OP/2015 \
+--time_from 2015-01 \
+--time_to 2015-12 \
+--toplevel \
+--no_stats \
+--reservoir_size 1000 \
+--commentregex '(?<![-\w])OP(?![-\w])' \
+--case_sensitive \
+--firstmatch;
+
+poetry run python otacon/main.py \
+--input /Volumes/Limbo/reddit/comments \
+--output output/OP/2020 \
+--time_from 2020-01 \
+--time_to 2020-12 \
+--toplevel \
+--no_stats \
+--reservoir_size 1000 \
+--commentregex '(?<![-\w])OP(?![-\w])' \
+--case_sensitive \
+--firstmatch;
