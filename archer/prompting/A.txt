@@ -1,0 +1,19 @@
+The text at the bottom is a comment taken from Reddit. It contains the term "OP" at least once.
+It is assumed that this means "original poster" and refers to whoever created the post to which this comment is replying to.
+State that "OP in question not 'original poster'" if this is not the case.
+
+If it does indeed mean that, please establish from all the metadata available whether the user writing the comment could have known the OP's gender.
+Do not prefix or introduce your response; begin your response with only with one of the three options: "gender ambiguous" if this is not clear, "gender unknown" if it is clear that it is unknown, and "gender known" if the commenter does indeed know OP's gender.
+
+As a second task, follow up your response regarding the gender by listing every anaphorical expression that refers to said OP. This can be expressions such as "the poster", "the guy", or their username. It can likewise be a pronoun like "he", "she", or also "they". Repetitions of "OP" also count.
+It is important that you list all anaphorical expressions in the format of e.g. "ANAPHORA: he, he, his, OP".
+Make sure the listed anaphora are not simply present in the text but do indeed refer to the same person initially called "OP".
+Your response will be parsed by code so it is important that you keep this format. Do not add anything further to your response to avoid parsing issues.
+
+Subreddit: {{SUBREDDIT}}
+Year: {{YEAR}}
+Month: {{MONTH}}
+Permalink: {{PERMALINK}}
+
+Comment:
+{{COMMENT}}
