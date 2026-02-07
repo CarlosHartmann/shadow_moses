@@ -107,12 +107,18 @@ def main():
 
                 df.at[i, "identified_anaphora"] = identified_anaphora
 
+                df.at[i, "LLM_response"] = response
+
             except Exception as e:
                 print(f"Error processing comment: {comment}. Error: {e}")
                 responses.append(None)  # Append None for comments that couldn't be processed
+            
+            if i % 10 == 0:
+                print(f"Saving progress after processing comment {i+1}/{len(df)}")
+                output_file_path = os.path.join(data_dir, f"LLM_analyzed_{file_path.split('/')[-1]}")
+                df.to_csv(output_file_path, index=False)
 
-        df["LLM_response"] = responses
-
+        
         output_file_path = os.path.join(data_dir, f"LLM_analyzed_{file_path.split('/')[-1]}")
         df.to_csv(output_file_path, index=False)
 
