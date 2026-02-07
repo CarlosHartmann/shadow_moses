@@ -118,6 +118,11 @@ def main():
                 output_file_path = os.path.join(data_dir, f"LLM_analyzed_{file_path.split('/')[-1]}")
                 df.to_csv(output_file_path, index=False)
 
+            # stop after 500 comments
+            if i >= 499:
+                print("Reached 500 comments, stopping to avoid excessive API calls.")
+                break
+
         
         output_file_path = os.path.join(data_dir, f"LLM_analyzed_{file_path.split('/')[-1]}")
         df.to_csv(output_file_path, index=False)
