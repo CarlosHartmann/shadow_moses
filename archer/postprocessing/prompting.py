@@ -9,7 +9,7 @@ import pandas as pd
 import requests
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-MODEL = "deepseek/deepseek-v3.2-speciale"
+MODEL = "openai/gpt-5-mini"
 CURRENT_PROMPTFILE = "A"
 
 def openrouter_request(prompt: str, system_message: str, model: str) -> str:
