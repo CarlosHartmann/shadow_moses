@@ -11,7 +11,7 @@ def check_span(span):  # span has format e.g. "(0, 4)"
     return start, end
 
 def main():
-    data_dirs = ['2010', '2015', '2020']
+    data_dirs = ['2016', '2017', '2018', '2019']
     for data_dir in data_dirs:
         current_path = os.path.dirname(os.path.realpath(__file__))
         data_dir = os.path.join(current_path, '..', data_dir)
@@ -39,7 +39,7 @@ def main():
             if token_span.root.pos_ in ["NOUN", "PROPN"]:
                 spacy_filter.append("")
             else:
-                print(f"Filtered out a comment where OP had the tag: {token_span.root.pos_}")
+                #print(f"Filtered out a comment where OP had the tag: {token_span.root.pos_}")
                 spacy_filter.append("OP not a noun")
 
         df["spacy_filter"] = spacy_filter

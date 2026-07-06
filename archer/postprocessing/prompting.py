@@ -8,7 +8,7 @@ import os
 import pandas as pd
 import requests
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_SHADOWMOSES_API_KEY")
 MODEL = "openai/gpt-5-mini"
 CURRENT_PROMPTFILE = "A"
 
@@ -50,7 +50,7 @@ def openrouter_request(prompt: str, system_message: str, model: str) -> str:
     return response_json['choices'][0]['message']['content']
 
 def main():
-    data_dirs = ['2010', '2015', '2020']
+    data_dirs = ['2017', '2018', '2019']
     for data_dir in data_dirs:
         print(f"Processing data directory: {data_dir}")
         current_path = os.path.dirname(os.path.realpath(__file__))
@@ -118,9 +118,9 @@ def main():
                 output_file_path = os.path.join(data_dir, f"LLM_analyzed_{file_path.split('/')[-1]}")
                 df.to_csv(output_file_path, index=False)
 
-            # stop after 500 comments
-            if i >= 499:
-                print("Reached 500 comments, stopping to avoid excessive API calls.")
+            # stop after 200 comments
+            if i >= 200:
+                print("Reached 200 comments, stopping to avoid excessive API calls.")
                 break
 
         
