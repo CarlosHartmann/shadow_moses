@@ -1,3 +1,4 @@
-1. Duplicate comments must be removed.
+1. Duplicate comments must be removed. (check ID – duplicate comments are not duplicate JSON objects, it's just that the search may have hit several items within the same comment text which resulted in several search hits for the same comment)
 2. Comments containing "i'm a bot" must be removed.
-3. Comments from AutoModerator and users containing (see Archer for hints) must be removed.
+3. Comments from AutoModerator and users whose names end in "Bot" (case-sensitive), "Mod", or "Moderator" must be removed.
+    keep a list of excluded users
