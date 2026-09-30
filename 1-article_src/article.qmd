@@ -1,0 +1,36 @@
+---
+title: "[Working title tba]"
+subtitle: ""
+author:
+    - name: "Anonymous"
+      email: "anonymous@example.com"
+number-sections: true
+jupyter: 
+    kernel: shadow_moses
+execute:
+    echo: false
+    warning: true
+fig-align: center
+format:
+    pdf:
+        pdf-engine: xelatex
+        fig-pos: H
+    docx:
+        reference-doc: word_style_template.docx
+header-includes:
+        - \usepackage{float}
+        - \usepackage{newunicodechar}
+        - \newunicodechar{α}{\ensuremath{\alpha}}
+        - \usepackage{caption}
+        - \captionsetup{font=it}
+        - \captionsetup{list=false}
+bibliography: bibliography.bib
+filters:
+    - filters/ling-example-numbering.lua
+---
+
+```{python}
+repository_link = "https://osf.io/uzfcj/overview?view_only=9c22b0aa0a3e420aa5ae11172a22812f"
+```
+
+Lorem Ipsum.
