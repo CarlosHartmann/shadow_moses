@@ -34,3 +34,34 @@ repository_link = "https://osf.io/uzfcj/overview?view_only=9c22b0aa0a3e420aa5ae1
 ```
 
 Lorem Ipsum.
+
+# Introduction
+
+# Background
+
+## Terminology
+
+– Introduce own terminology
+– Texts to reference / briefly comment: Arnold 2026, Conrod 2019, potentially something by Zimman
+– Highlight the innovativeness with the caveat that it may have been around since 1932.
+
+## Hypotheses
+
+H1: The use of specific singular _they_ has significantly increased since 2010 over using gendered anaphora among all groups considered in the study.
+
+H2: There was a marked increase ("explosion") in the use of specific, gender-unknown singular _they_ in 2014–2015.
+
+H3: The use of _he_ for a singular, gender-unknown referent has significantly decreased since 2010 over all groups considered in the study.
+
+H4: Speaker gender and age are stronger predictors for specific singular _they_ use than socio-political alignment.
+
+H5: Women and gender-diverse people are more likely to use specific, gender-unknown singular _they_ than men.
+
+
+# Notes
+
+– Demographics are a confound on Reddit. The makeup of the user base changes. This is especially important for the early years where it was a fair assumption that most users were male.
+
+– Never forget to do proper descriptive analysis, i.e., visualizing and examining thoroughly. Also valid, lots of testing is not always required, even insufficient without solid understanding of data.
+
+– H5 based on Laitinen, potentially Curzan, and my own _themself_ study.
