@@ -65,3 +65,5 @@ H5: Women and gender-diverse people are more likely to use specific, gender-unkn
 – Never forget to do proper descriptive analysis, i.e., visualizing and examining thoroughly. Also valid, lots of testing is not always required, even insufficient without solid understanding of data.
 
 – H5 based on Laitinen, potentially Curzan, and my own _themself_ study.
+
+– An equal number is of comments is sampled per month but analysis should probably go by blocks of 3, 4, or 6 months.

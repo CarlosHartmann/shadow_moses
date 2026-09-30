@@ -1,0 +1,3 @@
+1. Duplicate comments must be removed.
+2. Comments containing "i'm a bot" must be removed.
+3. Comments from AutoModerator and users containing (see Archer for hints) must be removed.

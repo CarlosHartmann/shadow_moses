@@ -1,0 +1,27 @@
+poetry run python -m otacon.main \
+--input /Volumes/rdisk2/redditdata/comments \
+--output /Volumes/rdisk2/redditdata/output/project3/all_OPs \
+--time_to 2021-10 \
+--spacy-search "(OP, JJ)" \
+--language "en_core_web_trf" \
+--spacy-search-exclusive \
+--no_stats \
+--return_all
+
+
+###########################
+
+spacy-search "(OP, JJ)":
+This argument instructs the `otacon` tool to search for tokens with string representation "OP" using the POS-tag "JJ" (adjective).
+The `--spacy-search-exclusive` flag ensures that only "OP" tokens are returned that do NOT match the POS-tag "JJ".
+In other words, all instances of "OP" are returned that are NOT marked as adjectives.
+The reason for that is the use of gaming slang (and other contexts) where "OP" stands for "overpowered."
+The reason not to positively filter for "OP" as noun is that it variably received different POS-tags (mostly Noun and Proper Noun). Preliminary testing showed that SpaCy had a high precision when recognizing the adjectival use. Every further filtering would still happen down the line by human or LLM oversight.
+
+--language "en_core_web_trf":
+The current English transformer-based model in SpaCy.
+
+--return_all
+This ensured that all metadata are returned, not just a subset filtered by other criteria.
+
+See associated repository for the output of this command.

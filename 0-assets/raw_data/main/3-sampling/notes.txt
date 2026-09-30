@@ -1,0 +1,10 @@
+Groups:
+Baseline
+Age Young
+Age Old
+Gender Male
+Gender Female or diverse
+Political Conservative
+Political Progressive
+Genderpolitical Conservative
+Genderpolitical Progressive
