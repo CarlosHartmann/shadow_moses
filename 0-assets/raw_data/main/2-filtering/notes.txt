@@ -2,3 +2,4 @@
 2. Comments containing "i'm a bot" must be removed.
 3. Comments from AutoModerator and users whose names end in "Bot" (case-sensitive), "Mod", or "Moderator" must be removed.
     keep a list of excluded users
+4. Comments from October 2021 must be removed.

@@ -7,6 +7,7 @@
 3. Comments from AutoModerator, or from users whose name ends in "Bot"
    (case-sensitive), "Mod", or "Moderator", are removed. Excluded usernames
    are collected and written to a separate file.
+4. Comments from October 2021 (UTC) are removed.
 
 The input file is *not* assumed to have one JSON object per physical line:
 strings inside the objects may themselves contain raw line breaks, so objects
@@ -19,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
@@ -66,6 +68,13 @@ def is_bot_or_mod(author: str) -> bool:
     return author.endswith("Bot") or author.endswith("Mod") or author.endswith("Moderator")
 
 
+def is_october_2021(created_utc) -> bool:
+    if created_utc is None:
+        return False
+    dt = datetime.fromtimestamp(float(created_utc), tz=timezone.utc)
+    return dt.year == 2021 and dt.month == 10
+
+
 def filter_comments(
     input_path: Path,
     output_path: Path,
@@ -89,6 +98,9 @@ def filter_comments(
                 continue
 
             if BOT_MESSAGE_PATTERN.search(body):
+                continue
+
+            if is_october_2021(obj.get("created_utc")):
                 continue
 
             if comment_id in seen_ids:

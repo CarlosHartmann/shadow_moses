@@ -1,0 +1,27 @@
+Groups:
+baseline
+age_young
+age_old
+gender_male
+gender_female_or_diverse
+political_conservative
+political_progressive
+gender_political_conservative
+gender_political_progressive
+
+For each group, here is what to pull out of the data.
+
+age_young: from subreddit /r/teenagers, only including comments with flairtext: "13", "14", "15", "16", "17", "18", "19"
+age_old: from subreddits /r/AskOldPeople, /r/Over30Reddit, /r/AskMenOver30, /r/AskMenOver40, /r/50something, /r/GenX, /r/OverFifty, /r/daddit
+gender_male: from subreddits /r/AskMen, /r/AskmenOver30
+gender_female_or_diverse: from subreddits /r/AskWomen, /r/TwoXChromosomes, /r/asktransgender
+political_conservative: from subreddits /r/Conservative, /r/AskConservatives; only comments with score at or above 5
+political_progressive: from subreddits /r/socialism, /r/politics; only comments with score at or above 5
+gender_political_conservative: from subreddits /r/JordanPeterson, /r/gendercritical; only comments with score at or above 5
+gender_political_progressive: from subreddits /r/asktransgender, /r/lgbt; only comments with score at or above 5
+
+baseline: anything not included in any of the other subreddits (comments that are from these subreddits but fail an additional condition like the score-based one, should not be included in the baseline either)
+
+Output statistics how many comments there are per group by every quartal (three-month period) in the data. Issue a warning if there are fewer than 100 comments in any quartal for any group, stating quartal and group.
+
+Output formats: XLSX, except for baseline (jsonl as before)
