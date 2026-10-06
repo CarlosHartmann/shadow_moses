@@ -12,7 +12,8 @@ gender_political_progressive
 For each group, here is what to pull out of the data.
 
 age_young:
-from subreddit /r/teenagers, only including comments with flairtext: "13", "14", "15", "16", "17", "18", "19"
+from subreddits:
+teenagers,
 AskRedditTeenagers,
 AskTeenGirls,
 askteenboys,
@@ -35,11 +36,15 @@ teenrelationships,
 teensdaily,
 TallTeenagers,
 youngadults,
-youngpeoplereddit,
 GenZ.
+Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
 
 age_old: 
 from subreddits:
+teenagerscirclejerk,
+genz,
+askteenboys,
+askteengirls,
 AskOldPeople,
 Over30Reddit,
 AskMenOver30,
@@ -61,7 +66,15 @@ Only include comments if their flair is marked as relevant in grouped_flairs.xls
 
 gender_male:
 from subreddits:
+youngadults,
+teenagersnew,
+teenagerscirclejerk,
+lgbteens,
+tallteenagers,
+indianteenagers,
 askteenboys,
+askteengirls,
+bisexualteens,
 AskMen,
 AskmenOver30,
 AskGayMen,
@@ -87,7 +100,15 @@ Only include comments if their flair is marked as relevant in grouped_flairs.xls
 
 gender_female_or_diverse:
 from subreddits:
+youngadults,
+teenagersnew,
+indianteenagers,
+tallteenagers,
+teenagerscirclejerk,
+lgbteens,
 askteenboys,
+askteengirls,
+bisexualteens,
 AskWomen,
 TwoXChromosomes,
 ActualWomen,
@@ -230,4 +251,6 @@ Log the time it takes and output it along with the statistics.
 
 Unless it exists already, output an XLSX file named "grouped_flairs.xlsx" in which each group has its own sheet. On its sheet, include all unique subreddit and flair combinations encountered in the data for that group. Add a column named "relevant" and fill it with the default value "X". If it does already exist, update it with any new subreddit and flair combinations encountered.
 
-Output formats: XLSX, except for baseline (jsonl as before)
+Output the group data in the directory "grouped_subreddit_data".
+
+Output formats: jsonl as before.

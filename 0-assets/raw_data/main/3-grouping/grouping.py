@@ -17,19 +17,19 @@ from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_INPUT = HERE.parent / "2-filtering" / "filtered_comments.jsonl"
-DEFAULT_OUTPUT_DIR = HERE
+DEFAULT_OUTPUT_DIR = HERE / "grouped_subreddit_data"
 STATISTICS_START_YEAR = 2010
 MINIMUM_QUARTERLY_COMMENTS = 100
-EXCEL_MAX_ROWS = 1_048_576
 EXCEL_MAX_CELL_CHARS = 32_767
 PROGRESS_EVERY = 1_000_000
 RUNTIME_LOG_NAME = "grouping_runtime.log"
 GROUPED_FLAIRS_NAME = "grouped_flairs.xlsx"
 FLAIR_COLUMNS = ["subreddit", "flair", "relevant"]
 DEFAULT_RELEVANT = "X"
-# age_young keeps its own FLAIR_RULES; every other group follows grouped_flairs.xlsx.
+# Every group follows grouped_flairs.xlsx for comments from January 2012 onward.
 FLAIR_RELEVANCE_GROUPS = frozenset(
     {
+        "age_young",
         "age_old",
         "gender_male",
         "gender_female_or_diverse",
@@ -64,7 +64,6 @@ GROUP_SUBREDDITS = {
         "teensdaily",
         "tallteenagers",
         "youngadults",
-        "youngpeoplereddit",
         "genz",
     },
     "age_old": {
@@ -233,10 +232,6 @@ SCORE_FILTERED_GROUPS = {
     "gender_political_conservative",
     "gender_political_progressive",
 }
-# (group, subreddit) -> author_flair_text values that qualify; enforced only from FLAIR_START.
-FLAIR_RULES = {
-    ("age_young", "teenagers"): {"13", "14", "15", "16", "17", "18", "19"},
-}
 FLAIR_START = datetime(2012, 1, 1, tzinfo=timezone.utc).timestamp()
 ALL_TARGET_SUBREDDITS = set().union(*GROUP_SUBREDDITS.values())
 GROUP_NAMES = tuple(GROUP_SUBREDDITS)
@@ -273,15 +268,6 @@ def matching_groups(comment: dict) -> list[str]:
         for group, subreddits in GROUP_SUBREDDITS.items()
         if subreddit in subreddits
     ]
-
-    if float(comment["created_utc"]) >= FLAIR_START:
-        flair = str(comment.get("author_flair_text") or "").strip()
-        groups = [
-            group
-            for group in groups
-            if (group, subreddit) not in FLAIR_RULES
-            or flair in FLAIR_RULES[(group, subreddit)]
-        ]
 
     try:
         score_qualifies = float(comment.get("score", 0)) >= 5
@@ -359,20 +345,25 @@ def update_grouped_flairs(
     return added
 
 
-def load_relevant_flairs(path: Path) -> dict[str, set[tuple[str, str]]] | None:
-    """Return the (subreddit, flair) pairs with a non-empty 'relevant' cell, or None without a file."""
+def load_relevant_flairs(
+    path: Path,
+) -> tuple[dict[str, set[tuple[str, str]]], dict[str, set[tuple[str, str]]]] | None:
+    """Return known and relevant pairs, or None when no annotation workbook exists."""
     if not path.exists():
         return None
     workbook = load_workbook(path, read_only=True)
+    known: dict[str, set[tuple[str, str]]] = {group: set() for group in GROUP_NAMES}
     relevant: dict[str, set[tuple[str, str]]] = {group: set() for group in GROUP_NAMES}
     for group in GROUP_NAMES:
         if group not in workbook.sheetnames:
             continue
         for row in workbook[group].iter_rows(min_row=2, max_col=3, values_only=True):
+            pair = (str(row[0] or ""), str(row[1] or ""))
+            known[group].add(pair)
             if str(row[2] or "").strip():
-                relevant[group].add((str(row[0] or ""), str(row[1] or "")))
+                relevant[group].add(pair)
     workbook.close()
-    return relevant
+    return known, relevant
 
 
 def format_duration(seconds: float) -> str:
@@ -381,46 +372,25 @@ def format_duration(seconds: float) -> str:
     return f"{hours}h {minutes:02d}m {secs:02d}s"
 
 
-def write_group_workbook(spill_path: Path, columns: list[str], output_path: Path) -> int:
-    """Stream a spill file into XLSX, starting a new sheet at Excel's row limit."""
-    workbook = Workbook(write_only=True)
-    sheet = None
-    rows_in_sheet = 0
-    sheet_count = 0
-    total_rows = 0
-    with spill_path.open("r", encoding="utf-8") as spill_file:
-        for line in spill_file:
-            if sheet is None or rows_in_sheet >= EXCEL_MAX_ROWS:
-                sheet_count += 1
-                sheet = workbook.create_sheet(f"Comments_{sheet_count}")
-                sheet.append(columns)
-                rows_in_sheet = 1
-            comment = json.loads(line)
-            sheet.append([excel_value(comment.get(column)) for column in columns])
-            rows_in_sheet += 1
-            total_rows += 1
-    if sheet is None:
-        workbook.create_sheet("Comments_1").append(columns)
-    workbook.save(output_path)
-    return total_rows
-
-
 def group_comments(input_path: Path, output_dir: Path) -> None:
     run_started = time.monotonic()
     run_started_at = datetime.now().isoformat(timespec="seconds")
     output_dir.mkdir(parents=True, exist_ok=True)
     baseline_path = output_dir / "baseline.jsonl"
     spill_paths = {group: output_dir / f".{group}.spill.jsonl" for group in GROUP_NAMES}
-    columns: dict[str, set[str]] = {group: set() for group in GROUP_NAMES}
+    group_counts = defaultdict(int)
     counts = defaultdict(lambda: defaultdict(int))
     flair_combos: dict[str, set[tuple[str, str]]] = {group: set() for group in GROUP_NAMES}
     last_quarter = None
     total_comments = 0
 
     print(f"Reading {input_path}", flush=True)
-    relevant_flairs = load_relevant_flairs(output_dir / GROUPED_FLAIRS_NAME)
-    if relevant_flairs is None:
+    flair_annotations = load_relevant_flairs(HERE / GROUPED_FLAIRS_NAME)
+    if flair_annotations is None:
         print(f"No {GROUPED_FLAIRS_NAME} yet; flair relevance is not applied.", flush=True)
+        known_flairs = relevant_flairs = None
+    else:
+        known_flairs, relevant_flairs = flair_annotations
     try:
         with ExitStack() as stack:
             baseline_file = stack.enter_context(baseline_path.open("w", encoding="utf-8"))
@@ -438,14 +408,16 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
                     pair = (subreddit, flair_of(comment))
                     flair_combos[group].add(pair)
                     if (
-                        relevant_flairs is not None
+                        known_flairs is not None
+                        and relevant_flairs is not None
                         and group in FLAIR_RELEVANCE_GROUPS
                         and float(comment["created_utc"]) >= FLAIR_START
+                        and pair in known_flairs[group]
                         and pair not in relevant_flairs[group]
                     ):
                         continue
                     spill_files[group].write(line)
-                    columns[group].update(comment)
+                    group_counts[group] += 1
                     if int(quarter[:4]) >= STATISTICS_START_YEAR:
                         counts[quarter][group] += 1
                 subreddit = str(comment.get("subreddit", "")).casefold()
@@ -470,7 +442,7 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
             if last_quarter and int(last_quarter[:4]) >= STATISTICS_START_YEAR
             else []
         )
-        flairs_path = output_dir / GROUPED_FLAIRS_NAME
+        flairs_path = HERE / GROUPED_FLAIRS_NAME
         flairs_existed = flairs_path.exists()
         added = update_grouped_flairs(flairs_path, flair_combos)
         print(
@@ -480,18 +452,15 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
         )
         statistics_path = output_dir / "quarterly_statistics.xlsx"
 
-        xlsx_started = time.monotonic()
+        output_started = time.monotonic()
         for group in GROUP_NAMES:
-            group_started = time.monotonic()
-            rows = write_group_workbook(
-                spill_paths[group], sorted(columns[group]), output_dir / f"{group}.xlsx"
-            )
+            output_path = output_dir / f"{group}.jsonl"
+            spill_paths[group].replace(output_path)
             print(
-                f"  {group}.xlsx: {rows:,} comments in "
-                f"{format_duration(time.monotonic() - group_started)}",
+                f"  {group}.jsonl: {group_counts[group]:,} comments",
                 flush=True,
             )
-        xlsx_seconds = time.monotonic() - xlsx_started
+        output_seconds = time.monotonic() - output_started
     finally:
         for path in spill_paths.values():
             path.unlink(missing_ok=True)
@@ -509,7 +478,7 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
                 )
     print(f"Baseline comments -> {baseline_path}")
     print(f"Quarterly statistics -> {statistics_path}")
-    print(f"Group workbooks -> {output_dir}")
+    print(f"Group JSONL files -> {output_dir}")
 
     total_seconds = time.monotonic() - run_started
     run_info = [
@@ -517,7 +486,7 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
         ("input", str(input_path)),
         ("comments processed", f"{total_comments:,}"),
         ("input pass", format_duration(pass_seconds)),
-        ("xlsx writing", format_duration(xlsx_seconds)),
+        ("group output writing", format_duration(output_seconds)),
         ("total runtime", format_duration(total_seconds)),
     ]
     write_statistics(statistics_path, quarters, counts, run_info)
@@ -526,7 +495,8 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
         log_file.write(
             f"{datetime.now().isoformat(timespec='seconds')} | input={input_path} | "
             f"comments={total_comments} | pass={format_duration(pass_seconds)} | "
-            f"xlsx={format_duration(xlsx_seconds)} | total={format_duration(total_seconds)}\n"
+            f"group_output={format_duration(output_seconds)} | "
+            f"total={format_duration(total_seconds)}\n"
         )
 
 
