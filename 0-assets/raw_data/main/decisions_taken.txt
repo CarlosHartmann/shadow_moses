@@ -1,0 +1,51 @@
+The search was for comments who refer to "OP" (Original Poster) that are identifiable along sociolinguistically relevant metadata.
+The first attempt at finding relevant data was by using the automatic SpaCy analysis to filter out uses of "OP" as adjectives. This proved insufficiently precise as the resulting dataset was much too small.
+
+The second attempt removed this filter step, instead moving it to a later stage when an LLM would assess this.
+There, only the first mention of "OP" as standalone word (case-sensitive) was considered a datapoint and extracted.
+Still, the whole JSONL file was retained.
+
+The workflow for the following steps was to create a file "notes.txt" for all instructions for transparency once finished but also for an LLM agent to implement the code, the last version of which I would manually review.
+
+In the filtering step, an additional deduplication was implemented, the string "i'm a bot" was used to filter out comments,
+a filtering rule was implemented to remove comments from AutoModerator and users whose names end in "Bot" (case-sensitive), "Mod", or "Moderator" (a list is kept for transparency and later double-checking),
+October 2021 was removed to keep a clean quartal-based grouping of the data,
+subreddits beginning with "u_" were removed to exclude user-specific pages that are not actual subreddits,
+any data from before January 2010 was removed,
+a raw text of unique subreddits was created to later find more subreddits of interest.
+
+This filtering step, generally speaking, is only for broad (i.e. unsupervised) cleaning and doesn't analyze any data yet.
+
+The next step was grouping. Now, the groups of users were defined that the linguistic analysis will be based on.
+The groups are:
+baseline – as a neutral comparison, will contain anything from subreddits not contained in the other groups
+age_young – defined as including Millennials and everyone younger.
+age_old – defined as including Generation X and everyone older.
+gender_male – defined as including all users who identify as male.
+gender_female_or_diverse – defined as including all users who identify as female or non-binary/diverse.
+political_conservative – defined as including all users who identify as politically conservative.
+political_progressive – defined as including all users who identify as politically progressive.
+gender_political_conservative – defined as all users who are conservative specifically with regards to gender politics.
+gender_political_progressive – defined as all users who are progressive specifically with regards to gender politics.
+
+The selection for all groups works as such:
+1. Subreddits are identified in which potentially relevant users participate.
+2. All the unique flairs are extracted by the grouping.py script.
+3. The flairs are manually annotated according to the defined groups.
+4. Users are then assigned to groups based on their categorized flairs.
+5. Unflaired users (clear majority) and users whose flairs make them ambiguous or irrelevant are filtered out (NOT assigned to baseline but removed altogether).
+6. Only the political and gender-political groups are further filtered for score: only relatively popular comments (score of at least and including 5) are considered.
+
+The grouping script also creates statistics showing how many comments are left per group per quartal. The broad goal is to end up with a dataset of at least 100 comments per group per quartal.
+While this is generous for linguistics standards (analysis at a time-level below a year is very seldomly done and 400 per year is considered abundant), I cannot at the moment say how many comments would still have to be removed, e.g. because the used "OP" does not mean original poster, or for other reasons.
+The process was done iteratively: when the statistics showed a dearth for a group, more relevant subreddits were searched for.
+Finding more subreddits happened in 3 ways:
+1. Searching for keywords in the subreddits.txt file created by the filtering script.
+2. Using my own knowledge of relevant subreddits, including ones that have been banned in the meantime.
+3. Browsing related subreddits suggested by Reddit itself and reading enough posts to determine their relevance.
+4. Using the subreddits included in my FlairShare corpus (https://doi.org/10.48656/4xzy-gc80).
+5. During annotation for one group, if a flair showed that the commenter could also belong to another group, this was noted and the subreddit added to the list of relevant subreddits for that other group.
+
+The latter strategy bears a certain risk: the data will then overlap. The same comment will be included in multiple groups, potentially affecting the independence of the datasets. This needs further reflection and discussion.
+
+As flairs were introduced in January 2012, the data in 2010 & 2011 could not be filtered based on user self-assignments, i.e. flairs. For this very early part of the data, it was decided to include all comments as communities were small anyway and it was hoped that the data would still show something worthwhile.

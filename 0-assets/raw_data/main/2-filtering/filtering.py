@@ -33,7 +33,7 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_INPUT = (
     HERE.parent
     / "1-extraction_stage"
-    / "comment_extraction_from_RC_2005-12.zst_executed-at_2026-09-30_at_21h-43m-00s_RC_2005-12.zst.jsonl"
+    / "second-attempt.jsonl"
 )
 DEFAULT_OUTPUT = HERE / "filtered_comments.jsonl"
 DEFAULT_EXCLUDED_USERS_OUTPUT = HERE / "excluded_users.txt"

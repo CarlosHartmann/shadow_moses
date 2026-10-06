@@ -23,3 +23,5 @@
 0-assets/raw_data/main/3-grouping/grouped_subreddit_data/grouping_runtime.log
 0-assets/raw_data/main/3-grouping/grouped_subreddit_data/political_conservative.jsonl
 0-assets/raw_data/main/3-grouping/grouped_subreddit_data/political_progressive.jsonl
+0-assets/raw_data/main/1-extraction_stage/first-attempt.jsonl
+0-assets/raw_data/main/1-extraction_stage/second-attempt.jsonl

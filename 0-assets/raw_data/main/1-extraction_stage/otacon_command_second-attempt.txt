@@ -1,0 +1,29 @@
+poetry run python -m otacon.main \
+--input /Volumes/rdisk2/redditdata/comments \
+--output /Volumes/rdisk2/redditdata/output/project3/all_OPs \
+--time_to 2021-10 \
+--commentregex "\bOP\b" \
+--firstmatch \
+--case_sensitive \
+--no_stats \
+--return_all
+
+###########################
+
+--commentregex "\bOP\b"
+This matches any occurrence of the standalone word "OP" in the comments.
+
+--case_sensitive
+This ensures that the search for "OP" is case-sensitive, meaning it will only match "OP" exactly and not variations like "op" or "Op".
+
+--firstmatch
+This ensures that only the first match of "OP" in each comment is considered, rather than all occurrences.
+The reason is that further occurrences will be considered in the statistics as anaphors and thus do not go ignored. They do not, however, represent their own datapoint and are thus not extracted and counted at this stage.
+
+--return_all
+This ensured that all metadata are returned, not just a subset filtered by other criteria.
+
+--no_stats
+This disables the generation of statistical summaries for the matches, focusing only on the raw extraction of data.
+
+See associated repository for the output of this command.
