@@ -67,6 +67,10 @@ GROUP_SUBREDDITS = {
         "genz",
     },
     "age_old": {
+        "teenagerscirclejerk",
+        "genz",
+        "askteenboys",
+        "askteengirls",
         "askoldpeople",
         "over30reddit",
         "askmenover30",
@@ -86,6 +90,15 @@ GROUP_SUBREDDITS = {
         "retirement",
     },
     "gender_male": {
+        "youngadults",
+        "teenagersnew",
+        "teenagerscirclejerk",
+        "lgbteens",
+        "tallteenagers",
+        "indianteenagers",
+        "askteenboys",
+        "askteengirls",
+        "bisexualteens",
         "askmen",
         "askmenover30",
         "askgaymen",
@@ -109,6 +122,15 @@ GROUP_SUBREDDITS = {
         "truegaymen",
     },
     "gender_female_or_diverse": {
+        "youngadults",
+        "teenagersnew",
+        "indianteenagers",
+        "tallteenagers",
+        "teenagerscirclejerk",
+        "lgbteens",
+        "askteenboys",
+        "askteengirls",
+        "bisexualteens",
         "askwomen",
         "twoxchromosomes",
         "actualwomen",
@@ -412,8 +434,11 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
                         and relevant_flairs is not None
                         and group in FLAIR_RELEVANCE_GROUPS
                         and float(comment["created_utc"]) >= FLAIR_START
-                        and pair in known_flairs[group]
-                        and pair not in relevant_flairs[group]
+                        and (
+                            not pair[1]
+                            or pair not in known_flairs[group]
+                            or pair not in relevant_flairs[group]
+                        )
                     ):
                         continue
                     spill_files[group].write(line)
