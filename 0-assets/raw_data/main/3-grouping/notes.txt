@@ -57,9 +57,11 @@ RelationshipsOver35,
 WellnessOver30,
 olderlesbians,
 retirement.
+Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
 
 gender_male:
 from subreddits:
+askteenboys,
 AskMen,
 AskmenOver30,
 AskGayMen,
@@ -81,9 +83,11 @@ MensRights,
 askgaybros,
 gaybros,
 truegaymen.
+Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
 
 gender_female_or_diverse:
 from subreddits:
+askteenboys,
 AskWomen,
 TwoXChromosomes,
 ActualWomen,
@@ -119,11 +123,31 @@ TransSupport,
 transgender,
 honesttransgender,
 asktransgender.
+Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
 
 political_conservative:
 From subreddits:
 Conservative,
-AskConservatives,
+ApexConservative,
+AskTrumpSupporters,
+ConservativeKiwi,
+ConservativeNewsWeb,
+NeverTrump,
+OhioConservatives,
+Republican,
+Right_Wing_Politics,
+RightLibertarian,
+True_AskA_Conservative,
+askaconservative,
+republicans,
+AskConservatives.
+For this group, only ever comments with score at or above 5.
+Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
+
+political_progressive:
+From subreddits:
+socialism,
+politics,
 AskALiberal,
 AskDemocrats,
 Ask_Politics,
@@ -139,22 +163,16 @@ Kossacks_for_Sanders,
 Liberal,
 liberalgunowners,
 NewYorkForSanders,
-NeutralPolitics,
 politicsdebate,
 progressive,
 socialistRA,
 Socialist_,
 Socialism_101,
 uspolitics,
-unionsforsanders.
-For this group, only ever comments with score at or above 5
-
-political_progressive:
-From subreddits:
-socialism,
-politics,
+unionsforsanders
 SandersForPresident.
-For this group, only comments with score at or above 5
+For this group, only comments with score at or above 5.
+Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
 
 gender_political_conservative:
 From subreddits:
@@ -166,18 +184,6 @@ lesbiangang,
 Lesbianactually,
 detrains,
 tradwives,
-ApexConservative,
-AskTrumpSupporters,
-ConservativeKiwi,
-ConservativeNewsWeb,
-NeverTrump,
-OhioConservatives,
-Republican,
-Right_Wing_Politics,
-RightLibertarian,
-True_AskA_Conservative,
-askaconservative,
-republicans,
 GenderCriticalGuys,
 MaleDatingStrategy,
 MarriedRedPill,
@@ -189,7 +195,8 @@ RightwingLGBT,
 WomenForTrump,
 antifeminists,
 TheRedPill.
-For this group, only comments with score at or above 5
+For this group, only comments with score at or above 5.
+Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
 
 gender_political_progressive:
 From subreddits:
@@ -207,11 +214,20 @@ lgbtaww,
 lgbtmemes,
 lgbtnews,
 lgbt.
-For this group, only comments with score at or above 5
+For this group, only comments with score at or above 5.
+Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
 
 baseline: anything not included in any of the other subreddits (comments that are from these subreddits but fail an additional condition like the score-based one, should not be included in the baseline either)
 
-Output statistics how many comments there are per group by every quartal (three-month period) in the data. Issue a warning if there are fewer than 100 comments in any full year for any group, stating year and group.
+As flairs were only introduced in January 2012, any grouping involving flairs are only to be followed for January 2012 and onwards. Before that, consider everything from the respective subreddit.
+
+Output statistics how many comments there are per group by every quartal (three-month period) in the data. Issue a warning if there are fewer than 100 comments in any quartal for any group, stating year and group.
 Both of these things start their count with 2010, not earlier.
+
+Ensure you don't load the entire dataset into memory at once.
+
+Log the time it takes and output it along with the statistics.
+
+Unless it exists already, output an XLSX file named "grouped_flairs.xlsx" in which each group has its own sheet. On its sheet, include all unique subreddit and flair combinations encountered in the data for that group. Add a column named "relevant" and fill it with the default value "X". If it does already exist, update it with any new subreddit and flair combinations encountered.
 
 Output formats: XLSX, except for baseline (jsonl as before)

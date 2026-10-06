@@ -1,3 +1,5 @@
+Ensure the input file is processed without loading it entirely into memory.
+
 1. Duplicate comments must be removed. (check ID – duplicate comments are not duplicate JSON objects, it's just that the search may have hit several items within the same comment text which resulted in several search hits for the same comment)
 2. Comments containing "i'm a bot" must be removed.
 3. Comments from AutoModerator and users whose names end in "Bot" (case-sensitive), "Mod", or "Moderator" must be removed.
@@ -6,3 +8,4 @@
 5. All comments where the subreddit begins with "u_" must be removed.
 6. All comments prior to January 2010 must be removed.
 7. Create a txt of all unique subreddits found in the comments.
+8. Output the time it takes to process the input file at the end.
