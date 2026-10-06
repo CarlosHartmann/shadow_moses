@@ -16,10 +16,36 @@ from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 HERE = Path(__file__).resolve().parent
 DEFAULT_INPUT = HERE.parent / "2-filtering" / "filtered_comments.jsonl"
 DEFAULT_OUTPUT_DIR = HERE
-MINIMUM_QUARTERLY_COMMENTS = 100
+STATISTICS_START_YEAR = 2010
+MINIMUM_ANNUAL_COMMENTS = 100
 
 GROUP_SUBREDDITS = {
-    "age_young": {"teenagers"},
+    "age_young": {
+        "askredditteenagers",
+        "askteengirls",
+        "askteenboys",
+        "bisexualteens",
+        "highschool",
+        "indianteenagers",
+        "indianteens",
+        "lgbteens",
+        "mtfteens",
+        "teenager",
+        "teenagerschat",
+        "teenagerscirclejerk",
+        "teenagerssupportteens",
+        "teenagersbutcool",
+        "teenagersbutpog",
+        "teenagers",
+        "teenagersnew",
+        "teenagenation",
+        "teenrelationships",
+        "teensdaily",
+        "tallteenagers",
+        "youngadults",
+        "youngpeoplereddit",
+        "genz",
+    },
     "age_old": {
         "askoldpeople",
         "over30reddit",
@@ -29,13 +55,153 @@ GROUP_SUBREDDITS = {
         "genx",
         "overfifty",
         "daddit",
+        "askgaybrosover30",
+        "40something",
+        "askwomenover30",
+        "ftmover30",
+        "makefriendsover30",
+        "relationshipsover35",
+        "wellnessover30",
+        "olderlesbians",
+        "retirement",
     },
-    "gender_male": {"askmen", "askmenover30"},
-    "gender_female_or_diverse": {"askwomen", "twoxchromosomes", "asktransgender"},
-    "political_conservative": {"conservative", "askconservatives"},
-    "political_progressive": {"socialism", "politics"},
-    "gender_political_conservative": {"jordanpeterson", "gendercritical"},
-    "gender_political_progressive": {"asktransgender", "lgbt"},
+    "gender_male": {
+        "askmen",
+        "askmenover30",
+        "askgaymen",
+        "askgaybrosover30",
+        "askmenadvice",
+        "asianmasculinity",
+        "bisexualmen",
+        "divorce_men",
+        "ftmmen",
+        "gaymen",
+        "leftwingmaleadvocates",
+        "maledatingstrategy",
+        "malefashionadvice",
+        "malegrooming",
+        "malementalhealth",
+        "men2men",
+        "menslib",
+        "mensrights",
+        "askgaybros",
+        "gaybros",
+        "truegaymen",
+    },
+    "gender_female_or_diverse": {
+        "askwomen",
+        "twoxchromosomes",
+        "actualwomen",
+        "askfeminists",
+        "asklesbians",
+        "asklgbt",
+        "askwomenadvice",
+        "autisminwomen",
+        "blacklgbt",
+        "blackwomens",
+        "femaleaccountability",
+        "femaledatingstrategy",
+        "femalelevelupstrategy",
+        "femalefashionadvice",
+        "foreveralonewomen",
+        "godlesswomen",
+        "lgbt_muslims",
+        "menopause",
+        "srswomen",
+        "womenofcolor",
+        "womenshealth",
+        "women",
+        "adhdwomen",
+        "agender",
+        "askalesbian",
+        "actuellesbians",
+        "bigender",
+        "genderqueer",
+        "lesbiangamers",
+        "lesbians",
+        "trans",
+        "transsupport",
+        "transgender",
+        "honesttransgender",
+        "asktransgender",
+    },
+    "political_conservative": {
+        "conservative",
+        "askconservatives",
+        "askaliberal",
+        "askdemocrats",
+        "ask_politics",
+        "askpolitics",
+        "americanpolitics",
+        "centerleftpolitics",
+        "democrat",
+        "democraticsocialism",
+        "democraticparty",
+        "democrats",
+        "justicedemocrats",
+        "kossacks_for_sanders",
+        "liberal",
+        "liberalgunowners",
+        "newyorkforsanders",
+        "neutralpolitics",
+        "politicsdebate",
+        "progressive",
+        "socialistra",
+        "socialist_",
+        "socialism_101",
+        "uspolitics",
+        "unionsforsanders",
+    },
+    "political_progressive": {"socialism", "politics", "sandersforpresident"},
+    "gender_political_conservative": {
+        "gendercritical",
+        "jordanpeterson",
+        "jbpforwomen",
+        "superstraight",
+        "lesbiangang",
+        "lesbianactually",
+        "detrains",
+        "tradwives",
+        "apexconservative",
+        "asktrumpsupporters",
+        "conservativekiwi",
+        "conservativenewsweb",
+        "nevertrump",
+        "ohioconservatives",
+        "republican",
+        "right_wing_politics",
+        "rightlibertarian",
+        "true_ask_a_conservative",
+        "askaconservative",
+        "republicans",
+        "gendercriticalguys",
+        "maledatingstrategy",
+        "marriedredpill",
+        "redpillparenting",
+        "redpillretention",
+        "redpillwives",
+        "redpillwomen",
+        "rightwinglgbt",
+        "womenfortrump",
+        "antifeminists",
+        "theredpill",
+    },
+    "gender_political_progressive": {
+        "asktransgender",
+        "feminism",
+        "feminismuncensored",
+        "gendercynical",
+        "menslib",
+        "pinkpillfeminism",
+        "srsfeminism",
+        "transpositive",
+        "transspace",
+        "transytalk",
+        "lgbtaww",
+        "lgbtmemes",
+        "lgbtnews",
+        "lgbt",
+    },
 }
 SCORE_FILTERED_GROUPS = {
     "political_conservative",
@@ -125,12 +291,10 @@ def write_statistics(output_path: Path, quarters: list[str], counts: dict) -> No
 
 def group_comments(input_path: Path, output_dir: Path) -> None:
     field_names: set[str] = set()
-    first_quarter = None
     last_quarter = None
     for line_number, comment in iter_comments(input_path):
         field_names.update(comment)
         quarter = quarter_for(comment, line_number)
-        first_quarter = quarter if first_quarter is None else min(first_quarter, quarter)
         last_quarter = quarter if last_quarter is None else max(last_quarter, quarter)
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -144,8 +308,13 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
         workbooks[group] = workbook
         sheets[group] = sheet
 
-    quarters = quarter_sequence(first_quarter, last_quarter) if first_quarter else []
+    quarters = (
+        quarter_sequence(f"{STATISTICS_START_YEAR}-Q1", last_quarter)
+        if last_quarter and int(last_quarter[:4]) >= STATISTICS_START_YEAR
+        else []
+    )
     counts = defaultdict(lambda: defaultdict(int))
+    annual_counts = defaultdict(lambda: defaultdict(int))
     baseline_path = output_dir / "baseline.jsonl"
     try:
         with baseline_path.open("w", encoding="utf-8") as baseline_file:
@@ -156,7 +325,10 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
                     sheets[group].append(
                         [excel_value(comment.get(column)) for column in columns]
                     )
-                    counts[quarter][group] += 1
+                    year = int(quarter[:4])
+                    if year >= STATISTICS_START_YEAR:
+                        counts[quarter][group] += 1
+                        annual_counts[year][group] += 1
                 subreddit = str(comment.get("subreddit", "")).casefold()
                 if subreddit not in ALL_TARGET_SUBREDDITS:
                     baseline_file.write(json.dumps(comment, ensure_ascii=False) + "\n")
@@ -174,12 +346,19 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
     for quarter in quarters:
         quarter_counts = [counts[quarter][group] for group in GROUP_NAMES]
         print(quarter + "\t" + "\t".join(map(str, quarter_counts)))
-        for group, count in zip(GROUP_NAMES, quarter_counts):
-            if count < MINIMUM_QUARTERLY_COMMENTS:
-                print(
-                    f"WARNING: {quarter} has {count} comments in {group} "
-                    f"(fewer than {MINIMUM_QUARTERLY_COMMENTS})."
-                )
+
+    if last_quarter and int(last_quarter[:4]) >= STATISTICS_START_YEAR:
+        last_year = int(last_quarter[:4])
+        last_quarter_number = int(last_quarter[-1])
+        last_full_year = last_year if last_quarter_number == 4 else last_year - 1
+        for year in range(STATISTICS_START_YEAR, last_full_year + 1):
+            for group in GROUP_NAMES:
+                count = annual_counts[year][group]
+                if count < MINIMUM_ANNUAL_COMMENTS:
+                    print(
+                        f"WARNING: {year} has {count} comments in {group} "
+                        f"(fewer than {MINIMUM_ANNUAL_COMMENTS})."
+                    )
     print(f"Baseline comments -> {baseline_path}")
     print(f"Quarterly statistics -> {statistics_path}")
     print(f"Group workbooks -> {output_dir}")

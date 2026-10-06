@@ -8,6 +8,10 @@
    (case-sensitive), "Mod", or "Moderator", are removed. Excluded usernames
    are collected and written to a separate file.
 4. Comments from October 2021 (UTC) are removed.
+5. Comments whose subreddit begins with "u_" are removed.
+6. Comments from before January 2010 (UTC) are removed.
+7. All unique subreddits found among the kept comments are written to a
+   separate file.
 
 The input file is *not* assumed to have one JSON object per physical line:
 strings inside the objects may themselves contain raw line breaks, so objects
@@ -32,6 +36,7 @@ DEFAULT_INPUT = (
 )
 DEFAULT_OUTPUT = HERE / "filtered_comments.jsonl"
 DEFAULT_EXCLUDED_USERS_OUTPUT = HERE / "excluded_users.txt"
+DEFAULT_SUBREDDITS_OUTPUT = HERE / "subreddits.txt"
 
 BOT_MESSAGE_PATTERN = re.compile(r"i['\u2019]m a bot", re.IGNORECASE)
 CHUNK_SIZE = 1024 * 1024
@@ -75,13 +80,22 @@ def is_october_2021(created_utc) -> bool:
     return dt.year == 2021 and dt.month == 10
 
 
+def is_before_january_2010(created_utc) -> bool:
+    if created_utc is None:
+        return False
+    dt = datetime.fromtimestamp(float(created_utc), tz=timezone.utc)
+    return dt < datetime(2010, 1, 1, tzinfo=timezone.utc)
+
+
 def filter_comments(
     input_path: Path,
     output_path: Path,
     excluded_users_output: Path,
+    subreddits_output: Path,
 ) -> None:
     seen_ids: set[str] = set()
     excluded_users: set[str] = set()
+    subreddits: set[str] = set()
 
     kept = 0
     total = 0
@@ -103,9 +117,20 @@ def filter_comments(
             if is_october_2021(obj.get("created_utc")):
                 continue
 
+            if is_before_january_2010(obj.get("created_utc")):
+                continue
+
+            subreddit = obj.get("subreddit", "")
+            if subreddit.startswith("u_"):
+                continue
+
             if comment_id in seen_ids:
                 continue
             seen_ids.add(comment_id)
+
+            subreddit = obj.get("subreddit")
+            if subreddit:
+                subreddits.add(subreddit)
 
             out_f.write(json.dumps(obj, ensure_ascii=False) + "\n")
             kept += 1
@@ -114,8 +139,13 @@ def filter_comments(
         for user in sorted(excluded_users):
             users_f.write(user + "\n")
 
+    with open(subreddits_output, "w", encoding="utf-8") as subreddits_f:
+        for subreddit in sorted(subreddits):
+            subreddits_f.write(subreddit + "\n")
+
     print(f"Processed {total} comments, kept {kept}, removed {total - kept}.")
     print(f"Excluded {len(excluded_users)} unique bot/mod users -> {excluded_users_output}")
+    print(f"Found {len(subreddits)} unique subreddits -> {subreddits_output}")
 
 
 def main() -> None:
@@ -128,9 +158,15 @@ def main() -> None:
         default=DEFAULT_EXCLUDED_USERS_OUTPUT,
         help="Path to write the list of excluded bot/mod usernames.",
     )
+    parser.add_argument(
+        "--subreddits-output",
+        type=Path,
+        default=DEFAULT_SUBREDDITS_OUTPUT,
+        help="Path to write the list of unique subreddits found in the kept comments.",
+    )
     args = parser.parse_args()
 
-    filter_comments(args.input, args.output, args.excluded_users_output)
+    filter_comments(args.input, args.output, args.excluded_users_output, args.subreddits_output)
 
 
 if __name__ == "__main__":

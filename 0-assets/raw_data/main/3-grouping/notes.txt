@@ -11,17 +11,207 @@ gender_political_progressive
 
 For each group, here is what to pull out of the data.
 
-age_young: from subreddit /r/teenagers, only including comments with flairtext: "13", "14", "15", "16", "17", "18", "19"
-age_old: from subreddits /r/AskOldPeople, /r/Over30Reddit, /r/AskMenOver30, /r/AskMenOver40, /r/50something, /r/GenX, /r/OverFifty, /r/daddit
-gender_male: from subreddits /r/AskMen, /r/AskmenOver30
-gender_female_or_diverse: from subreddits /r/AskWomen, /r/TwoXChromosomes, /r/asktransgender
-political_conservative: from subreddits /r/Conservative, /r/AskConservatives; only comments with score at or above 5
-political_progressive: from subreddits /r/socialism, /r/politics; only comments with score at or above 5
-gender_political_conservative: from subreddits /r/JordanPeterson, /r/gendercritical; only comments with score at or above 5
-gender_political_progressive: from subreddits /r/asktransgender, /r/lgbt; only comments with score at or above 5
+age_young:
+from subreddit /r/teenagers, only including comments with flairtext: "13", "14", "15", "16", "17", "18", "19"
+AskRedditTeenagers,
+AskTeenGirls,
+askteenboys,
+BisexualTeens,
+highschool,
+IndianTeenagers,
+IndianTeens,
+LGBTeens,
+MtFteens,
+Teenager,
+TeenagersChat,
+TeenagersCircleJerk,
+TeenagersSupportTeens,
+Teenagersbutcool,
+Teenagersbutpog,
+teenagers,
+teenagersnew,
+teenagenation,
+teenrelationships,
+teensdaily,
+TallTeenagers,
+youngadults,
+youngpeoplereddit,
+GenZ.
+
+age_old: 
+from subreddits:
+AskOldPeople,
+Over30Reddit,
+AskMenOver30,
+AskMenOver40,
+50something,
+GenX,
+OverFifty,
+daddit,
+AskGaybrosOver30,
+40something,
+AskWomenOver30,
+FTMOver30,
+MakeFriendsOver30,
+RelationshipsOver35,
+WellnessOver30,
+olderlesbians,
+retirement.
+
+gender_male:
+from subreddits:
+AskMen,
+AskmenOver30,
+AskGayMen,
+AskGaybrosOver30,
+AskMenAdvice,
+AsianMasculinity,
+BisexualMen,
+Divorce_Men,
+FTMMen,
+GayMen,
+LeftWingMaleAdvocates,
+MaleDatingStrategy,
+malefashionadvice,
+malegrooming,
+malementalhealth,
+Men2Men,
+MensLib,
+MensRights,
+askgaybros,
+gaybros,
+truegaymen.
+
+gender_female_or_diverse:
+from subreddits:
+AskWomen,
+TwoXChromosomes,
+ActualWomen,
+AskFeminists,
+AskLesbians,
+AskLGBT,
+AskWomenAdvice,
+AutismInWomen,
+BlackLGBT,
+BlackWomens,
+FemaleAccountability,
+FemaleDatingStrategy,
+FemaleLevelUpStrategy,
+femalefashionadvice,
+ForeverAloneWomen,
+GodlessWomen,
+LGBT_Muslims,
+Menopause,
+SRSWomen,
+WomenOfColor,
+WomensHealth,
+women,
+adhdwomen,
+agender,
+askalesbian,
+actuellesbians,
+bigender,
+genderqueer,
+lesbianGamers,
+lesbians,
+trans,
+TransSupport,
+transgender,
+honesttransgender,
+asktransgender.
+
+political_conservative:
+From subreddits:
+Conservative,
+AskConservatives,
+AskALiberal,
+AskDemocrats,
+Ask_Politics,
+Askpolitics,
+AmericanPolitics,
+centerleftpolitics,
+Democrat,
+DemocraticSocialism,
+democraticparty,
+democrats,
+justicedemocrats,
+Kossacks_for_Sanders,
+Liberal,
+liberalgunowners,
+NewYorkForSanders,
+NeutralPolitics,
+politicsdebate,
+progressive,
+socialistRA,
+Socialist_,
+Socialism_101,
+uspolitics,
+unionsforsanders.
+For this group, only ever comments with score at or above 5
+
+political_progressive:
+From subreddits:
+socialism,
+politics,
+SandersForPresident.
+For this group, only comments with score at or above 5
+
+gender_political_conservative:
+From subreddits:
+gendercritical,
+JordanPeterson,
+JBPforWomen,
+SuperStraight,
+lesbiangang,
+Lesbianactually,
+detrains,
+tradwives,
+ApexConservative,
+AskTrumpSupporters,
+ConservativeKiwi,
+ConservativeNewsWeb,
+NeverTrump,
+OhioConservatives,
+Republican,
+Right_Wing_Politics,
+RightLibertarian,
+True_AskA_Conservative,
+askaconservative,
+republicans,
+GenderCriticalGuys,
+MaleDatingStrategy,
+MarriedRedPill,
+RedPillParenting,
+RedPillRetention,
+RedPillWives,
+RedPillWomen,
+RightwingLGBT,
+WomenForTrump,
+antifeminists,
+TheRedPill.
+For this group, only comments with score at or above 5
+
+gender_political_progressive:
+From subreddits:
+asktransgender,
+Feminism,
+FeminismUncensored,
+GenderCynical,
+MensLib,
+PinkpillFeminism,
+SRSFeminism,
+Transpositive,
+TransSpace,
+TransyTalk,
+lgbtaww,
+lgbtmemes,
+lgbtnews,
+lgbt.
+For this group, only comments with score at or above 5
 
 baseline: anything not included in any of the other subreddits (comments that are from these subreddits but fail an additional condition like the score-based one, should not be included in the baseline either)
 
-Output statistics how many comments there are per group by every quartal (three-month period) in the data. Issue a warning if there are fewer than 100 comments in any quartal for any group, stating quartal and group.
+Output statistics how many comments there are per group by every quartal (three-month period) in the data. Issue a warning if there are fewer than 100 comments in any full year for any group, stating year and group.
+Both of these things start their count with 2010, not earlier.
 
 Output formats: XLSX, except for baseline (jsonl as before)

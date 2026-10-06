@@ -3,3 +3,6 @@
 3. Comments from AutoModerator and users whose names end in "Bot" (case-sensitive), "Mod", or "Moderator" must be removed.
     keep a list of excluded users
 4. Comments from October 2021 must be removed.
+5. All comments where the subreddit begins with "u_" must be removed.
+6. All comments prior to January 2010 must be removed.
+7. Create a txt of all unique subreddits found in the comments.
