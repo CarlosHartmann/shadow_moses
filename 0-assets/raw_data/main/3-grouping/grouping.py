@@ -42,6 +42,12 @@ FLAIR_RELEVANCE_GROUPS = frozenset(
 
 GROUP_SUBREDDITS = {
     "age_young": {
+        "genx",
+        "ftmover30",
+        "askwomenover30",
+        "askoldpeople",
+        "askmenover30",
+        "askgaybrosover30",
         "askredditteenagers",
         "askteengirls",
         "askteenboys",
@@ -90,6 +96,8 @@ GROUP_SUBREDDITS = {
         "retirement",
     },
     "gender_male": {
+        "daddit",
+        "askoldpeople",
         "youngadults",
         "teenagersnew",
         "teenagerscirclejerk",
@@ -122,6 +130,10 @@ GROUP_SUBREDDITS = {
         "truegaymen",
     },
     "gender_female_or_diverse": {
+        "ftmover30",
+        "askoldpeople",
+        "askmenover30",
+        "40something",
         "youngadults",
         "teenagersnew",
         "indianteenagers",
@@ -211,6 +223,7 @@ GROUP_SUBREDDITS = {
         "sandersforpresident",
     },
     "gender_political_conservative": {
+        "askmenover30",
         "gendercritical",
         "jordanpeterson",
         "jbpforwomen",
