@@ -49,3 +49,6 @@ Finding more subreddits happened in 3 ways:
 The latter strategy bears a certain risk: the data will then overlap. The same comment will be included in multiple groups, potentially affecting the independence of the datasets. This needs further reflection and discussion.
 
 As flairs were introduced in January 2012, the data in 2010 & 2011 could not be filtered based on user self-assignments, i.e. flairs. For this very early part of the data, it was decided to include all comments as communities were small anyway and it was hoped that the data would still show something worthwhile.
+
+
+-flairs like "halfway there" are imprecise but tells us about their age in a qualitative way. The person feels old and that's kind of what matters (ageing as something done in socially but not biologically meaningful ways)

@@ -13,6 +13,12 @@ For each group, here is what to pull out of the data.
 
 age_young:
 from subreddits:
+genx,
+ftmover30,
+askwomenover30,
+askoldpeople,
+askmenover30,
+askgaybrosover30,
 teenagers,
 AskRedditTeenagers,
 AskTeenGirls,
@@ -65,7 +71,9 @@ retirement.
 Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
 
 gender_male:
+daddit,
 from subreddits:
+askoldpeople,
 youngadults,
 teenagersnew,
 teenagerscirclejerk,
@@ -100,6 +108,10 @@ Only include comments if their flair is marked as relevant in grouped_flairs.xls
 
 gender_female_or_diverse:
 from subreddits:
+ftmover30,
+askoldpeople,
+askmenover30,
+40something,
 youngadults,
 teenagersnew,
 indianteenagers,
@@ -197,6 +209,7 @@ Only include comments if their flair is marked as relevant in grouped_flairs.xls
 
 gender_political_conservative:
 From subreddits:
+askmenover30, (note to self: RedPill Moderator)
 gendercritical,
 JordanPeterson,
 JBPforWomen,
