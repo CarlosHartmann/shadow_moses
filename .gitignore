@@ -25,3 +25,12 @@
 0-assets/raw_data/main/3-grouping/grouped_subreddit_data/political_progressive.jsonl
 0-assets/raw_data/main/1-extraction_stage/first-attempt.jsonl
 0-assets/raw_data/main/1-extraction_stage/second-attempt.jsonl
+0-assets/raw_data/main/4-cross-subreddit-data/political_progressive.jsonl
+0-assets/raw_data/main/4-cross-subreddit-data/political_conservative.jsonl
+0-assets/raw_data/main/4-cross-subreddit-data/gender_political_progressive.jsonl
+0-assets/raw_data/main/4-cross-subreddit-data/gender_political_conservative.jsonl
+0-assets/raw_data/main/4-cross-subreddit-data/gender_male.jsonl
+0-assets/raw_data/main/4-cross-subreddit-data/gender_female_or_diverse.jsonl
+0-assets/raw_data/main/4-cross-subreddit-data/baseline.jsonl
+0-assets/raw_data/main/4-cross-subreddit-data/age_young.jsonl
+0-assets/raw_data/main/4-cross-subreddit-data/age_old.jsonl

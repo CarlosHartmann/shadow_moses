@@ -1,0 +1,17 @@
+This step in the process is supposed to provide more data from users identified as relevant.
+In ../3-grouping/grouped_subreddit_data, we have data in jsonl files that are called like the groups in this study.
+As a reminder, the groups are called: baseline, age_young, age_old, gender_male, gender_female_or_diverse, political_conservative, political_progressive, gender_political_conservative, and gender_political_progressive.
+There, the data was filtered according to the flairs the users had in certain subreddits.
+Since the flairs identified them as relevant, but the data are limited to comments made only in those subreddits, we are now interested in their comments in any other subreddits.
+
+Use the baseline "group" found in ../3-grouping/grouped_subreddit_data/baseline.jsonl as the starting point. Use the other grouped data to identify relevant users and comment IDs.
+The groups were assembled if a user-flair-subreddit combination was deemed relevant. So, we could theoretically have the same user on a different subreddit within the group's subreddit set, but where they didn't have a relevant flair. I would then still want that comment!
+
+The grouping step excludes every study-target subreddit from baseline.jsonl, including comments that did not qualify for a group. To avoid missing those comments, also scan ../2-filtering/filtered_comments.jsonl for relevant users. Exclude comment IDs already present in any original group. If an author belongs to multiple groups, include each additional comment in each of those groups.
+
+Flair filtering only applies from January 2012 onward. Identify relevant users using only their grouped comments from January 2012 onward; once selected, collect their other comments from any date, including before 2012. Still use grouped comment IDs from all dates when excluding duplicates.
+
+1. Read through the grouped data to identify relevant users from comments dated January 2012 onward, while collecting original comment IDs from all dates. Note that you cannot load the baseline data into memory all at once.
+2. Remove relevant users' comments from the step-3 baseline and save the remaining comments as this step's baseline output. Search the filtered comments for other comments by relevant users, skipping IDs already present in any original group.
+3. Organize newly collected comments in one JSONL file per group, matching the grouped-data structure.
+4. Generate quarterly_statistics.xlsx with original group counts plus new comments, and remaining baseline counts, using the grouped-data workbook's quarter and group layout.
