@@ -17,7 +17,7 @@ SCRIPT_DIR = (
 )
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from cross_subreddit import GROUPS, process_cross_subreddit_data
+from cross_subreddit import DEFAULT_OUTPUT_DIR, GROUPS, process_cross_subreddit_data
 
 
 def make_comment(
@@ -39,6 +39,9 @@ def write_jsonl(path: Path, comments: list[dict]) -> None:
 
 
 class CrossSubredditTests(unittest.TestCase):
+    def test_default_output_dir_is_dedicated_subdirectory(self) -> None:
+        self.assertEqual(DEFAULT_OUTPUT_DIR, SCRIPT_DIR / "cross_subreddit_data")
+
     def test_partitions_baseline_and_adds_unseen_comments_to_author_groups(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)

@@ -61,3 +61,4 @@ The gender distinction is about people being in the gender-related non-male camp
 It was ensured that users with, e.g., one relevant flair and one irrelevant (e.g. only one flair disclosed their gender but the other didn't) would still have all their comments considered in the end. This is done through the cross-subreddit-data collection that took the usernames and collected all other comments by them.
 
 -I will have to check for overlap between young and old users as nobody should be in both. It could happen, however, if someone aged over the threshhold and kept their flair up-to-date. In that case, I might have to add some additional processing step to divide their comments and assign them to the appropriate age group based on the timestamp of each comment.
+-Going one further, it might even make sense to turn age into continuous variable rather than discrete groups, assigning each comment an age based on the timestamp and the user's flair-indicated age.

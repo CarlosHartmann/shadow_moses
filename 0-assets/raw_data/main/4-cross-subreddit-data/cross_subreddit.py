@@ -18,7 +18,7 @@ HERE = Path(__file__).resolve().parent
 GROUPED_DIR = HERE.parent / "3-grouping" / "grouped_subreddit_data"
 DEFAULT_BASELINE = GROUPED_DIR / "baseline.jsonl"
 DEFAULT_FILTERED_INPUT = HERE.parent / "2-filtering" / "filtered_comments.jsonl"
-DEFAULT_OUTPUT_DIR = HERE
+DEFAULT_OUTPUT_DIR = HERE / "cross_subreddit_data"
 STATISTICS_START_YEAR = 2010
 AUTHOR_SELECTION_START = datetime(2012, 1, 1, tzinfo=timezone.utc).timestamp()
 GROUPS = (

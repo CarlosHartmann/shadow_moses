@@ -14,4 +14,4 @@ Flair filtering only applies from January 2012 onward. Identify relevant users u
 1. Read through the grouped data to identify relevant users from comments dated January 2012 onward, while collecting original comment IDs from all dates. Note that you cannot load the baseline data into memory all at once.
 2. Remove relevant users' comments from the step-3 baseline and save the remaining comments as this step's baseline output. Search the filtered comments for other comments by relevant users, skipping IDs already present in any original group.
 3. Organize newly collected comments in one JSONL file per group, matching the grouped-data structure.
-4. Generate quarterly_statistics.xlsx with original group counts plus new comments, and remaining baseline counts, using the grouped-data workbook's quarter and group layout.
+4. Save the baseline, group JSONL files, and quarterly_statistics.xlsx under cross_subreddit_data/. The statistics combine original group counts plus new comments, and remaining baseline counts, using the grouped-data workbook's quarter and group layout.
