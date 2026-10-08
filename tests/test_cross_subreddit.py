@@ -105,6 +105,7 @@ class CrossSubredditTests(unittest.TestCase):
                 output_dir / "quarterly_statistics.xlsx", read_only=True
             )
             rows = list(workbook["Quarterly counts"].iter_rows(values_only=True))
+            self.assertNotIn("Warnings", workbook.sheetnames)
             workbook.close()
             self.assertEqual(rows[0][0], "quarter")
             quarter_counts = next(row for row in rows[1:] if row[0] == "2020-Q1")

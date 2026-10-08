@@ -257,8 +257,8 @@ As flairs were only introduced in January 2012, any grouping involving flairs ar
 
 Empty flairs are not considered relevant under the rules for grouped_flairs.xlsx (unless the comments are from before January 2012, see prior rule) and should therefore be filtered out.
 
-Output statistics how many comments there are per group by every quartal (three-month period) in the data. Issue a warning if there are fewer than 100 comments in any quartal for any group, stating year and group.
-Both of these things start their count with 2010, not earlier.
+Output statistics how many comments there are per group by every quartal (three-month period) in the data.
+The count starts with 2010, not earlier.
 
 Ensure you don't load the entire dataset into memory at once.
 

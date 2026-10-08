@@ -19,7 +19,6 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_INPUT = HERE.parent / "2-filtering" / "filtered_comments.jsonl"
 DEFAULT_OUTPUT_DIR = HERE / "grouped_subreddit_data"
 STATISTICS_START_YEAR = 2010
-MINIMUM_QUARTERLY_COMMENTS = 100
 EXCEL_MAX_CELL_CHARS = 32_767
 PROGRESS_EVERY = 1_000_000
 RUNTIME_LOG_NAME = "grouping_runtime.log"
@@ -503,17 +502,6 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
         for path in spill_paths.values():
             path.unlink(missing_ok=True)
 
-    print("Quarterly comment counts:")
-    print("quarter\t" + "\t".join(GROUP_NAMES))
-    for quarter in quarters:
-        quarter_counts = [counts[quarter][group] for group in GROUP_NAMES]
-        print(quarter + "\t" + "\t".join(map(str, quarter_counts)))
-        for group, count in zip(GROUP_NAMES, quarter_counts):
-            if count < MINIMUM_QUARTERLY_COMMENTS:
-                print(
-                    f"WARNING: {quarter} has {count} comments in {group} "
-                    f"(fewer than {MINIMUM_QUARTERLY_COMMENTS})."
-                )
     print(f"Baseline comments -> {baseline_path}")
     print(f"Quarterly statistics -> {statistics_path}")
     print(f"Group JSONL files -> {output_dir}")

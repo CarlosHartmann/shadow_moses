@@ -20,7 +20,6 @@ DEFAULT_BASELINE = GROUPED_DIR / "baseline.jsonl"
 DEFAULT_FILTERED_INPUT = HERE.parent / "2-filtering" / "filtered_comments.jsonl"
 DEFAULT_OUTPUT_DIR = HERE
 STATISTICS_START_YEAR = 2010
-MINIMUM_QUARTERLY_COMMENTS = 100
 AUTHOR_SELECTION_START = datetime(2012, 1, 1, tzinfo=timezone.utc).timestamp()
 GROUPS = (
     "age_young",
@@ -229,18 +228,6 @@ def process_cross_subreddit_data(
         ("total runtime", f"{total_seconds:.2f} seconds"),
     ]
     write_statistics(output_dir / "quarterly_statistics.xlsx", quarters, counts, run_info)
-
-    print("Quarterly comment counts:")
-    print("quarter\t" + "\t".join(STATISTICS_GROUPS))
-    for quarter in quarters:
-        values = [counts[quarter][group] for group in STATISTICS_GROUPS]
-        print(quarter + "\t" + "\t".join(map(str, values)))
-        for group, count in zip(STATISTICS_GROUPS, values):
-            if count < MINIMUM_QUARTERLY_COMMENTS:
-                print(
-                    f"WARNING: {quarter} has {count} comments in {group} "
-                    f"(fewer than {MINIMUM_QUARTERLY_COMMENTS})."
-                )
 
     for group in GROUPS:
         print(f"{group}.jsonl: {cross_group_counts[group]:,} additional comments")
