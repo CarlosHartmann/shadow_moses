@@ -2,6 +2,7 @@ genx
 ftmover30
 askwomenover30
 askoldpeople
+askmen
 askmenover30
 askgaybrosover30
 askredditteenagers
@@ -27,3 +28,4 @@ teensdaily
 tallteenagers
 youngadults
 genz
+askgaybros
