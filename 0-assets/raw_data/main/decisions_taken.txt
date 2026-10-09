@@ -62,3 +62,16 @@ It was ensured that users with, e.g., one relevant flair and one irrelevant (e.g
 
 -I will have to check for overlap between young and old users as nobody should be in both. It could happen, however, if someone aged over the threshhold and kept their flair up-to-date. In that case, I might have to add some additional processing step to divide their comments and assign them to the appropriate age group based on the timestamp of each comment.
 -Going one further, it might even make sense to turn age into continuous variable rather than discrete groups, assigning each comment an age based on the timestamp and the user's flair-indicated age.
+
+Pronouns in flair were not enough evidence to include in gender_male as someone could be a trans man and thus belong in "diverse". However, "she/her" pronouns are enough evidence to be included in the female/diverse group because all possibilities there are either that it's a cis woman or someone from the diverse category.
+
+"Queerness" was not taken as a sign for assigning a user to either gender group. Unless further specified, "queer" can refer to either gender identity or sexual orientation. The latter alone was not considered as a relevant category in this study.
+
+The use of feminine suffixes was sometimes the only hint at femaleness but considered enough. E.g., "anarcha", "Social Justice Sorceress".
+
+"HRT" was enough to classify someone as "diverse" as it indicates hormone replacement therapy, which is typically associated with transgender or non-cisgender identities.
+(It can in theory be used by people who lack certain hormones due to a medical condition, but using the word "HRT" on a transgender subreddit is almost always indicative of being transgender.)
+
+"Got a Caterpillar Body and a Butterfly Brain" - wonderful quote, might use it.
+
+"Questioning" was not judged to be sufficient to be included in the "diverse" group because questioning can be part of cis-gendered experiences as well. And if there is no other element linking the person to womanhood, it could theoretically be a cis-gender man and therefore not a user to be included in the "woman or diverse" group.
