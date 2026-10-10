@@ -17,7 +17,12 @@ SCRIPT_DIR = (
 )
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from cross_subreddit import DEFAULT_OUTPUT_DIR, GROUPS, process_cross_subreddit_data
+from cross_subreddit import (
+    DEFAULT_OUTPUT_DIR,
+    GROUPS,
+    group_path,
+    process_cross_subreddit_data,
+)
 
 
 def make_comment(
@@ -46,16 +51,19 @@ class CrossSubredditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             grouped_dir = root / "grouped"
+            age_dir = root / "age"
             output_dir = root / "output"
             grouped_dir.mkdir()
+            age_dir.mkdir()
             original = make_comment("original", "Alice", "study_subreddit")
             pre_2012_original = make_comment(
                 "pre-2012-original", "PreOnly", "study_subreddit", year=2011
             )
             for group in GROUPS:
-                write_jsonl(grouped_dir / f"{group}.jsonl", [])
-            write_jsonl(grouped_dir / "age_young.jsonl", [original])
-            write_jsonl(grouped_dir / "age_old.jsonl", [pre_2012_original])
+                write_jsonl(group_path(group, grouped_dir, age_dir), [])
+            write_jsonl(age_dir / "age_millennial.jsonl", [original])
+            write_jsonl(age_dir / "age_young.jsonl", [original])
+            write_jsonl(age_dir / "age_old.jsonl", [pre_2012_original])
             write_jsonl(grouped_dir / "gender_male.jsonl", [original])
 
             baseline_path = root / "baseline.jsonl"
@@ -83,7 +91,7 @@ class CrossSubredditTests(unittest.TestCase):
             )
 
             process_cross_subreddit_data(
-                baseline_path, grouped_dir, filtered_path, output_dir
+                baseline_path, grouped_dir, filtered_path, output_dir, age_dir
             )
 
             expected_ids = [
@@ -92,13 +100,13 @@ class CrossSubredditTests(unittest.TestCase):
                 "unseen-target",
                 "unseen-other",
             ]
-            for group in ("age_young", "gender_male"):
+            for group in ("age_millennial", "age_young", "gender_male"):
                 with (output_dir / f"{group}.jsonl").open(encoding="utf-8") as group_file:
                     identifiers = [json.loads(line)["id"] for line in group_file]
                 self.assertEqual(identifiers, expected_ids)
             with (output_dir / "age_old.jsonl").open(encoding="utf-8") as group_file:
-                pre_2012_only_ids = [json.loads(line)["id"] for line in group_file]
-            self.assertEqual(pre_2012_only_ids, [])
+                self.assertEqual([json.loads(line)["id"] for line in group_file], [])
+            self.assertFalse((output_dir / "age.jsonl").exists())
 
             with (output_dir / "baseline.jsonl").open(encoding="utf-8") as baseline_file:
                 remaining_ids = [json.loads(line)["id"] for line in baseline_file]
@@ -111,16 +119,19 @@ class CrossSubredditTests(unittest.TestCase):
             self.assertNotIn("Warnings", workbook.sheetnames)
             workbook.close()
             self.assertEqual(rows[0][0], "quarter")
+            column = {name: index for index, name in enumerate(rows[0])}
+            self.assertNotIn("age", column)
             quarter_counts = next(row for row in rows[1:] if row[0] == "2020-Q1")
-            self.assertEqual(quarter_counts[1], 2)
-            self.assertEqual(quarter_counts[2], 4)
-            self.assertEqual(quarter_counts[3], 0)
-            self.assertEqual(quarter_counts[4], 4)
+            self.assertEqual(quarter_counts[column["baseline"]], 2)
+            self.assertEqual(quarter_counts[column["age_millennial"]], 4)
+            self.assertEqual(quarter_counts[column["age_young"]], 4)
+            self.assertEqual(quarter_counts[column["age_old"]], 0)
+            self.assertEqual(quarter_counts[column["gender_male"]], 4)
             historical_counts = next(row for row in rows[1:] if row[0] == "2011-Q1")
-            self.assertEqual(historical_counts[1], 0)
-            self.assertEqual(historical_counts[2], 1)
-            self.assertEqual(historical_counts[3], 1)
-            self.assertEqual(historical_counts[4], 1)
+            self.assertEqual(historical_counts[column["baseline"]], 0)
+            self.assertEqual(historical_counts[column["age_millennial"]], 1)
+            self.assertEqual(historical_counts[column["age_old"]], 1)
+            self.assertEqual(historical_counts[column["gender_male"]], 1)
 
 
 if __name__ == "__main__":

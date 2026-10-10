@@ -1,17 +1,19 @@
 This step in the process is supposed to provide more data from users identified as relevant.
-In ../3-grouping/grouped_subreddit_data, we have data in jsonl files that are called like the groups in this study.
-As a reminder, the groups are called: baseline, age_young, age_old, gender_male, gender_female_or_diverse, political_conservative, political_progressive, gender_political_conservative, and gender_political_progressive.
+In ../3a-grouping/grouped_subreddit_data, we have data in jsonl files that are called like the groups in this study. The age groups are the exception: they are read from ../3b-age-grouping (age_silent, age_boomer, age_X, age_millennial, age_Z, age_young, age_old; each .jsonl), not from 3a. There is no plain "age" group at this stage.
+As a reminder, the groups are called: baseline, the seven age groups above, gender_male, gender_female_or_diverse, political_conservative, political_progressive, gender_political_conservative, and gender_political_progressive.
 There, the data was filtered according to the flairs the users had in certain subreddits.
 Since the flairs identified them as relevant, but the data are limited to comments made only in those subreddits, we are now interested in their comments in any other subreddits.
 
-Use the baseline "group" found in ../3-grouping/grouped_subreddit_data/baseline.jsonl as the starting point. Use the other grouped data to identify relevant users and comment IDs.
+Use the baseline "group" found in ../3a-grouping/grouped_subreddit_data/baseline.jsonl as the starting point. Use the other grouped data to identify relevant users and comment IDs.
 The groups were assembled if a user-flair-subreddit combination was deemed relevant. So, we could theoretically have the same user on a different subreddit within the group's subreddit set, but where they didn't have a relevant flair. I would then still want that comment!
 
 The grouping step excludes every study-target subreddit from baseline.jsonl, including comments that did not qualify for a group. To avoid missing those comments, also scan ../2-filtering/filtered_comments.jsonl for relevant users. Exclude comment IDs already present in any original group. If an author belongs to multiple groups, include each additional comment in each of those groups.
 
 Flair filtering only applies from January 2012 onward. Identify relevant users using only their grouped comments from January 2012 onward; once selected, collect their other comments from any date, including before 2012. Still use grouped comment IDs from all dates when excluding duplicates.
 
-1. Read through the grouped data to identify relevant users from comments dated January 2012 onward, while collecting original comment IDs from all dates. Note that you cannot load the baseline data into memory all at once.
+1. Read through the grouped data to identify relevant users from comments dated January 2012 onward, while collecting original comment IDs from all dates. Note that you cannot load the baseline data into memory all at once. The age groups are read from ../3b-age-grouping; comments that the 3b scripts dropped (no deduced birth year range, or a range outside every group) are not part of any age group, so their authors are not selected through age.
 2. Remove relevant users' comments from the step-3 baseline and save the remaining comments as this step's baseline output. Search the filtered comments for other comments by relevant users, skipping IDs already present in any original group.
 3. Organize newly collected comments in one JSONL file per group, matching the grouped-data structure.
-4. Save the baseline, group JSONL files, and quarterly_statistics.xlsx under cross_subreddit_data/. The statistics combine original group counts plus new comments, and remaining baseline counts, using the grouped-data workbook's quarter and group layout.
+4. Save the baseline, group JSONL files, and quarterly_statistics.xlsx under cross_subreddit_data/. The statistics combine original group counts plus new comments, and remaining baseline counts. The columns are baseline, one per age group (age_silent, age_boomer, age_X, age_millennial, age_Z, age_young, age_old), and one per other group. For the age groups the original counts are those of the files in ../3b-age-grouping (the same counts as in that folder's quarterly statistics workbooks), plus the new cross-subreddit comments. The generation groups and the young/old groups cover the same comments, so the age columns must not be added up across the two splits.
+
+Cross-subreddit comments come from filtered_comments.jsonl and carry no deduced_birthyear_range, because that field is only added to the flaired comments in step 3b.

@@ -15,15 +15,25 @@ from openpyxl import Workbook
 
 
 HERE = Path(__file__).resolve().parent
-GROUPED_DIR = HERE.parent / "3-grouping" / "grouped_subreddit_data"
+GROUPED_DIR = HERE.parent / "3a-grouping" / "grouped_subreddit_data"
+AGE_DIR = HERE.parent / "3b-age-grouping"
+# Files written by the 3b group_by scripts; both splits cover the same comments.
+AGE_GROUPS = (
+    "age_silent",
+    "age_boomer",
+    "age_X",
+    "age_millennial",
+    "age_Z",
+    "age_young",
+    "age_old",
+)
 DEFAULT_BASELINE = GROUPED_DIR / "baseline.jsonl"
 DEFAULT_FILTERED_INPUT = HERE.parent / "2-filtering" / "filtered_comments.jsonl"
 DEFAULT_OUTPUT_DIR = HERE / "cross_subreddit_data"
 STATISTICS_START_YEAR = 2010
 AUTHOR_SELECTION_START = datetime(2012, 1, 1, tzinfo=timezone.utc).timestamp()
 GROUPS = (
-    "age_young",
-    "age_old",
+    *AGE_GROUPS,
     "gender_male",
     "gender_female_or_diverse",
     "political_conservative",
@@ -84,8 +94,13 @@ def quarter_sequence(first: str, last: str) -> list[str]:
     return quarters
 
 
+def group_path(group: str, grouped_dir: Path, age_dir: Path) -> Path:
+    return (age_dir if group in AGE_GROUPS else grouped_dir) / f"{group}.jsonl"
+
+
 def load_grouped_users_and_ids(
     grouped_dir: Path,
+    age_dir: Path,
 ) -> tuple[
     dict[str, set[str]],
     set[str],
@@ -100,7 +115,7 @@ def load_grouped_users_and_ids(
     last_quarter = None
 
     for group in GROUPS:
-        path = grouped_dir / f"{group}.jsonl"
+        path = group_path(group, grouped_dir, age_dir)
         for line_number, _, comment in iter_comments(path):
             quarter = quarter_for(comment, line_number, path)
             author = author_key(comment)
@@ -140,12 +155,13 @@ def process_cross_subreddit_data(
     grouped_dir: Path,
     filtered_path: Path,
     output_dir: Path,
+    age_dir: Path = AGE_DIR,
 ) -> None:
     run_started = time.monotonic()
     run_started_at = datetime.now().isoformat(timespec="seconds")
     output_dir.mkdir(parents=True, exist_ok=True)
     groups_by_author, original_ids, counts, last_quarter = load_grouped_users_and_ids(
-        grouped_dir
+        grouped_dir, age_dir
     )
     baseline_spill = output_dir / ".baseline.spill.jsonl"
     group_spills = {group: output_dir / f".{group}.spill.jsonl" for group in GROUPS}
@@ -218,6 +234,7 @@ def process_cross_subreddit_data(
         ("run started", run_started_at),
         ("baseline input", str(baseline_path)),
         ("grouped input", str(grouped_dir)),
+        ("age input", str(age_dir)),
         ("filtered input", str(filtered_path)),
         ("relevant authors", f"{len(groups_by_author):,}"),
         ("original comment IDs", f"{len(original_ids):,}"),
@@ -246,6 +263,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", type=Path, default=DEFAULT_BASELINE)
     parser.add_argument("--grouped-dir", type=Path, default=GROUPED_DIR)
+    parser.add_argument("--age-dir", type=Path, default=AGE_DIR)
     parser.add_argument("--filtered", type=Path, default=DEFAULT_FILTERED_INPUT)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     args = parser.parse_args()
@@ -254,6 +272,7 @@ def main() -> None:
         args.grouped_dir,
         args.filtered,
         args.output_dir,
+        args.age_dir,
     )
 
 

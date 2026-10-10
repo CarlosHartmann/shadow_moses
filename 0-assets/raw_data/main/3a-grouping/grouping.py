@@ -26,9 +26,19 @@ RUNTIME_LOG_NAME = "grouping_runtime.log"
 GROUPED_FLAIRS_NAME = "grouped_flairs.xlsx"
 FLAIR_COLUMNS = ["subreddit", "flair", "relevant"]
 DEFAULT_RELEVANT = "X"
+AGE_GROUP = "age"
+# In the age sheet a flair is relevant if any of these columns holds a value.
+AGE_ANNOTATION_COLUMNS = (
+    "given_age",
+    "given_birthyear",
+    "given_agerange",
+    "given_birthyear_range",
+    "given_generation",
+    "given_description",
+)
+LEGACY_RELEVANT_MARKER = "X"
 GROUP_ORDER = (
-    "age_young",
-    "age_old",
+    AGE_GROUP,
     "gender_male",
     "gender_female_or_diverse",
     "political_conservative",
@@ -39,8 +49,7 @@ GROUP_ORDER = (
 # Every group follows grouped_flairs.xlsx for comments from January 2012 onward.
 FLAIR_RELEVANCE_GROUPS = frozenset(
     {
-        "age_young",
-        "age_old",
+        AGE_GROUP,
         "gender_male",
         "gender_female_or_diverse",
         "political_conservative",
@@ -74,6 +83,8 @@ SCORE_FILTERED_GROUPS = {
 FLAIR_START = datetime(2012, 1, 1, tzinfo=timezone.utc).timestamp()
 ALL_TARGET_SUBREDDITS = set().union(*GROUP_SUBREDDITS.values())
 GROUP_NAMES = tuple(GROUP_SUBREDDITS)
+# Age statistics come from the 3b group_by scripts, once the age data is split.
+STATISTICS_GROUP_NAMES = tuple(group for group in GROUP_NAMES if group != AGE_GROUP)
 
 
 def iter_comments(path: Path) -> Iterator[tuple[int, str, dict]]:
@@ -142,9 +153,9 @@ def write_statistics(
 ) -> None:
     workbook = Workbook(write_only=True)
     sheet = workbook.create_sheet("Quarterly counts")
-    sheet.append(["quarter", *GROUP_NAMES])
+    sheet.append(["quarter", *STATISTICS_GROUP_NAMES])
     for quarter in quarters:
-        sheet.append([quarter, *(counts[quarter][group] for group in GROUP_NAMES)])
+        sheet.append([quarter, *(counts[quarter][group] for group in STATISTICS_GROUP_NAMES)])
     info_sheet = workbook.create_sheet("Run info")
     for row in run_info:
         info_sheet.append(list(row))
@@ -171,14 +182,22 @@ def update_grouped_flairs(
             sheet = workbook[group]
         else:
             sheet = workbook.create_sheet(group)
-            sheet.append(FLAIR_COLUMNS)
+            sheet.append(
+                ["subreddit", "flair", *AGE_ANNOTATION_COLUMNS]
+                if group == AGE_GROUP
+                else FLAIR_COLUMNS
+            )
         known = {
             (str(row[0] or ""), str(row[1] or ""))
             for row in sheet.iter_rows(min_row=2, max_col=2, values_only=True)
         }
         new_combos = sorted(combos[group] - known)
         for subreddit, flair in new_combos:
-            sheet.append([subreddit, flair, DEFAULT_RELEVANT])
+            # Unseen age flairs stay blank, i.e. irrelevant until annotated.
+            if group == AGE_GROUP:
+                sheet.append([subreddit, flair])
+            else:
+                sheet.append([subreddit, flair, DEFAULT_RELEVANT])
         added[group] = len(new_combos)
     workbook.save(path)
     return added
@@ -195,6 +214,22 @@ def load_relevant_flairs(
     relevant: dict[str, set[tuple[str, str]]] = {group: set() for group in GROUP_NAMES}
     for group in GROUP_NAMES:
         if group not in workbook.sheetnames:
+            continue
+        if group == AGE_GROUP:
+            rows = workbook[group].iter_rows(values_only=True)
+            header = [str(name or "") for name in next(rows, ())]
+            columns = [header.index(name) for name in AGE_ANNOTATION_COLUMNS if name in header]
+            for row in rows:
+                row = (*row, *[None] * (len(header) - len(row)))
+                pair = (str(row[0] or ""), str(row[1] or ""))
+                known[group].add(pair)
+                # A flair can occupy several rows; any annotated row makes it relevant.
+                if any(
+                    str(row[index] or "").strip()
+                    and str(row[index]).strip().upper() != LEGACY_RELEVANT_MARKER
+                    for index in columns
+                ):
+                    relevant[group].add(pair)
             continue
         for row in workbook[group].iter_rows(min_row=2, max_col=3, values_only=True):
             pair = (str(row[0] or ""), str(row[1] or ""))

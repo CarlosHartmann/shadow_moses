@@ -1,0 +1,44 @@
+This step turns the flair-based age information into birth years and splits the age data into groups.
+The input is ../3a-grouping/grouped_subreddit_data/age.jsonl: every age comment from step 3a, i.e. comments in the age subreddits whose flair is marked as processable on the "age" sheet of ../3a-grouping/grouped_flairs.xlsx (plus everything from those subreddits before January 2012, when flairs did not exist yet).
+The age data is not split into groups in step 3a. All splitting happens here, in separate scripts, so that other groupings can be added later.
+
+Scripts, to be run in this order:
+1. deduce_birthyear.py
+2. group_by_generation.py
+3. group_by_age.py
+(2 and 3 are independent of each other.) The whole pipeline order is grouping.py (3a), deduce_birthyear.py, group_by_generation.py, group_by_age.py, and then cross_subreddit.py (step 4).
+
+1. deduce_birthyear.py
+Adds the field "deduced_birthyear_range" to every comment of age.jsonl and writes the result to age.jsonl in this folder. The value is a list [first year, last year], or null if no birth year can be deduced.
+The birth year is deduced per comment, not per user: only the comment's own flair counts, and the year is the year of created_utc (UTC). Users are not combined across their comments.
+The comment's flair is looked up on the age sheet by subreddit (case-insensitive) and flair text. A flair can occupy several rows on the sheet; the rows are merged (the first value of each column wins, and a warning is printed if two rows disagree).
+Which annotation is used, in this order of priority:
+- given_birthyear: the range is [year, year].
+- given_birthyear_range (e.g. 1954-1965): the range as given. Reversed ranges (1981-1980) are sorted.
+- given_age: the age is taken as correct at the time of the comment. We do not know whether the birthday of that year has passed, so for age A in year Y the range is [Y-A-1, Y-A].
+- given_agerange (e.g. 30-39): the widest consistent span, [Y-39-1, Y-30].
+- given_generation: the fixed range of that generation (below), independent of the comment year.
+A flair with only given_description (old, young) gets null, and so does a comment with an empty or unannotated flair (e.g. everything from before 2012). These comments are dropped by the scripts below.
+Generation ranges (xennial is not standardized and is only used here, not as a group in group_by_generation.py):
+silent 1928-1945, boomer 1946-1964, X 1965-1980, millennial 1981-1996, Z 1997-2012, xennial 1975-1985.
+Values that are not numbers or ranges are ignored with a warning.
+
+2. group_by_generation.py
+Reads age.jsonl from this folder and writes age_silent.jsonl, age_boomer.jsonl, age_X.jsonl, age_millennial.jsonl and age_Z.jsonl, using the generation ranges above (xennial is not a group).
+A range that crosses a generation boundary goes to the generation that contains most of its years. If two generations tie, the older one is chosen.
+Comments without a deduced range, or whose range lies completely outside the five generations (for instance the "100 or over" flairs), are dropped. They are not written to any file; the script only prints how many there were.
+Also writes age_generation_quarterly_statistics.xlsx.
+
+3. group_by_age.py
+Reads age.jsonl from this folder and writes age_old.jsonl (born 1980 or earlier, i.e. Generation X and older) and age_young.jsonl (born 1981 or later, i.e. Millennials and younger).
+Ranges crossing the cutoff go to the side that holds most of the years; a tie goes to old. Comments without a deduced range are dropped, as above.
+Also writes age_young_old_quarterly_statistics.xlsx.
+
+The generation groups and the young/old groups cover the same comments; every comment is in at most one generation group and at most one of young/old.
+
+Quarterly statistics:
+Each group_by script writes an XLSX with one column per group, counting the comments written to that group by quarter (three-month period), starting with 2010, not earlier, and a second sheet with run info (input, counts, runtime). Step 3a leaves the age group out of its own statistics, so these workbooks are where the age counts come from. Step 4 starts from these files' counts.
+
+Ensure you don't load the entire dataset into memory at once: the scripts read and write one line at a time.
+
+Output formats: jsonl as before. All output goes to this folder (3b-age-grouping).

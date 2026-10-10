@@ -1,7 +1,6 @@
 Groups:
 baseline
-age_young
-age_old
+age
 gender_male
 gender_female_or_diverse
 political_conservative
@@ -9,18 +8,21 @@ political_progressive
 gender_political_conservative
 gender_political_progressive
 
-The subreddit lists for each group (except baseline) are in the directory "subreddit_lists", one file per group (e.g. subreddit_lists/age_young.txt). The script reads them from there.
+The subreddit lists for each group (except baseline) are in the directory "subreddit_lists", one file per group (e.g. subreddit_lists/gender_male.txt). The script reads them from there.
 
 For each group, here is what to pull out of the data.
 
-age_young, age_old, gender_male, gender_female_or_diverse:
+age:
+The age group is one group (not split into young and old here; that happens in ../3b-age-grouping). Only include comments if their flair is relevant on the "age" sheet of grouped_flairs.xlsx. A flair is relevant there if at least one of the annotation columns given_age, given_birthyear, given_agerange, given_birthyear_range, given_generation or given_description has a value. Rows with none of these filled in are not processable and therefore irrelevant. A leftover "X" (the old relevance marker) does not count as an annotation. The same subreddit and flair can occupy several rows of the age sheet; it is relevant if any of its rows is annotated.
+
+gender_male, gender_female_or_diverse:
 Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
 
 political_conservative, political_progressive, gender_political_conservative, gender_political_progressive:
 Only include comments with score at or above 5.
 Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
 
-Note to self: askmenover30 (in gender_political_conservative) is a RedPill Moderator.
+
 
 baseline: anything not included in any of the other subreddits (comments that are from these subreddits but fail an additional condition like the score-based one, should not be included in the baseline either)
 
@@ -30,13 +32,15 @@ Empty flairs are not considered relevant under the rules for grouped_flairs.xlsx
 
 Output statistics how many comments there are per group by every quartal (three-month period) in the data.
 The count starts with 2010, not earlier.
+The age group is left out of these statistics; the group_by scripts in ../3b-age-grouping produce the age statistics.
 
 Ensure you don't load the entire dataset into memory at once.
 
 Log the time it takes and output it along with the statistics.
 
 Unless it exists already, output an XLSX file named "grouped_flairs.xlsx" in which each group has its own sheet. On its sheet, include all unique subreddit and flair combinations encountered in the data for that group. Add a column named "relevant" and fill it with the default value "X". If it does already exist, update it with any new subreddit and flair combinations encountered.
+The "age" sheet is different: it has the columns subreddit, flair, given_age, given_birthyear, given_generation, given_agerange, given_birthyear_range and given_description (annotated by hand and in the course of this study, not by the script). New subreddit and flair combinations are appended there with all annotation columns blank, i.e. irrelevant until they are annotated. The script never writes an "X" into the age sheet.
 
-Output the group data in the directory "grouped_subreddit_data".
+Output the group data in the directory "grouped_subreddit_data". The age data is written to a single age.jsonl; ../3b-age-grouping takes it from there.
 
 Output formats: jsonl as before.
