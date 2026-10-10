@@ -38,7 +38,7 @@ Ensure you don't load the entire dataset into memory at once.
 
 Log the time it takes and output it along with the statistics.
 
-Unless it exists already, output an XLSX file named "grouped_flairs.xlsx" in which each group has its own sheet. On its sheet, include all unique subreddit and flair combinations encountered in the data for that group. Add a column named "relevant" and fill it with the default value "X". If it does already exist, update it with any new subreddit and flair combinations encountered.
+Unless it exists already, output an XLSX file named "grouped_flairs.xlsx" in which each group has its own sheet. On its sheet, include all unique subreddit and flair combinations encountered in the data for that group. Add a column named "relevant" and leave it empty for new combinations; an empty value means not relevant until someone fills it in (e.g. with "X"). If it does already exist, update it with any new subreddit and flair combinations encountered.
 The "age" sheet is different: it has the columns subreddit, flair, given_age, given_birthyear, given_generation, given_agerange, given_birthyear_range and given_description (annotated by hand and in the course of this study, not by the script). New subreddit and flair combinations are appended there with all annotation columns blank, i.e. irrelevant until they are annotated. The script never writes an "X" into the age sheet.
 
 Output the group data in the directory "grouped_subreddit_data". The age data is written to a single age.jsonl; ../3b-age-grouping takes it from there.

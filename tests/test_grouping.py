@@ -49,6 +49,24 @@ class AgeRelevanceTests(unittest.TestCase):
             _, relevant = load_relevant_flairs(path)
         self.assertNotIn(("askmen", "new flair"), relevant["age"])
 
+    def test_unseen_flairs_of_other_groups_are_appended_blank(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "flairs.xlsx"
+            workbook = Workbook()
+            sheet = workbook.active
+            sheet.title = "gender_male"
+            sheet.append(["subreddit", "flair", "relevant"])
+            sheet.append(["askmen", "M", "X"])
+            workbook.save(path)
+            from grouping import GROUP_NAMES
+
+            combos = {"gender_male": {("askmen", "M"), ("askmen", "new")}}
+            added = update_grouped_flairs(path, {group: combos.get(group, set()) for group in GROUP_NAMES})
+            known, relevant = load_relevant_flairs(path)
+        self.assertEqual(added["gender_male"], 1)
+        self.assertIn(("askmen", "new"), known["gender_male"])
+        self.assertEqual(relevant["gender_male"], {("askmen", "M")})
+
 
 if __name__ == "__main__":
     unittest.main()

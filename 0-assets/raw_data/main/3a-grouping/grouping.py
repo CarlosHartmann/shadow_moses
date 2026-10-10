@@ -25,7 +25,6 @@ PROGRESS_EVERY = 1_000_000
 RUNTIME_LOG_NAME = "grouping_runtime.log"
 GROUPED_FLAIRS_NAME = "grouped_flairs.xlsx"
 FLAIR_COLUMNS = ["subreddit", "flair", "relevant"]
-DEFAULT_RELEVANT = "X"
 AGE_GROUP = "age"
 # In the age sheet a flair is relevant if any of these columns holds a value.
 AGE_ANNOTATION_COLUMNS = (
@@ -193,11 +192,8 @@ def update_grouped_flairs(
         }
         new_combos = sorted(combos[group] - known)
         for subreddit, flair in new_combos:
-            # Unseen age flairs stay blank, i.e. irrelevant until annotated.
-            if group == AGE_GROUP:
-                sheet.append([subreddit, flair])
-            else:
-                sheet.append([subreddit, flair, DEFAULT_RELEVANT])
+            # Unseen flairs stay blank, i.e. irrelevant until annotated.
+            sheet.append([subreddit, flair])
         added[group] = len(new_combos)
     workbook.save(path)
     return added

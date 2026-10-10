@@ -54,7 +54,7 @@ As flairs were introduced in January 2012, the data in 2010 & 2011 could not be 
 
 [cross-subreddit data collection, to follow]
 
-Once I sample the data for the final linguistic analysis, I should mind that there is a fair balance among users to prevent one super-user being included too often. Perhaps even a 1-item-per-user limit.
+Once I sample the data for the final linguistic analysis, I should mind that there is a fair balance among users to prevent one super-user being included too often. Perhaps even a 1-item-per-user limit – or perhaps not 1-item-per-user, but equal amount of items per user in the sample.
 
 The gender distinction is about people being in the gender-related non-male camp, or being male. I see gender_male as exclusively cis men then, and trans men being included in the "diverse" part of "gender_female_or_diverse". However, I cannot completely guarantee this.
 
@@ -82,6 +82,9 @@ The following example wowed me: "sdrawkcab siht dear: 61 became given_age 16 (th
 Even if a birth year is a person-property, it is expected that people fail to update their flairs. Since we are blindly trusting flair information, it is possible that a user will be saved as being one age over, e.g., 2 years of posting.
 
 Generations defined as: silent 1928-1945, Boomer 1946-1964, X 1965-1980, Millennial 1981-1996, Z 1997-2012, xennial 1975-1985 (not standardized).
+
+Political conservative:
+Did not feel comfortable classifying Christian flairs as conservative unless they included something additional to indicate it. But Christianity by itself comes in too many flavors to allow a Christian=conservative assumption.
 
 Questions for supervisor:
 Should I go through all included users' comment history to search for strings that self-identify as being from a English-speaking country/region?
