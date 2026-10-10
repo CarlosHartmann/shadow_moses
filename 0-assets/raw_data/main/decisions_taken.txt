@@ -83,6 +83,7 @@ Even if a birth year is a person-property, it is expected that people fail to up
 
 Generations defined as: silent 1928-1945, Boomer 1946-1964, X 1965-1980, Millennial 1981-1996, Z 1997-2012, xennial 1975-1985 (not standardized).
 
-Global questions:
+Questions for supervisor:
 Should I go through all included users' comment history to search for strings that self-identify as being from a English-speaking country/region?
-If there are not enough data from the age/gender subreddits, should I go through the OP-datadump to search for strings that self-identify as being a certain gender/age?
+Age variable: binary (young/old), generation (silent, Boomer, X, Millennial, Z, xennial), or continuous variable based on birth year?
+Is group-overlap an issue or not? Is there a good way to handle it, e.g. by the choice of a modelling approach that accounts for overlapping groups? The question of how to encode age is also relevant here.
