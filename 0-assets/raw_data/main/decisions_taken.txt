@@ -92,6 +92,9 @@ Questions for supervisor:
 Should I go through all included users' comment history to search for strings that self-identify as being from a English-speaking country/region?
 Age variable: binary (young/old), generation (silent, Boomer, X, Millennial, Z, xennial), or continuous variable based on birth year?
 Is group-overlap an issue or not? Is there a good way to handle it, e.g. by the choice of a modelling approach that accounts for overlapping groups? The question of how to encode age is also relevant here.
+Should I do both(!) the score thresshold and flair-annotation for the clearly-aligned subreddits like redpill etc?
 
 I was pretty liberal/generous with including people from gendercritical. Their flairs did not always indicate anti-trans sentiment, but calling oneself a proud militant feminist (and similar) on GC is a fairly clear anti-trans message.
 Anti-porn was also taken as gender-political conservative stance.
+
+-some redpill subreddits have a system of "endorsed contributors" that are marked in the flair. This was of course used for annotation.
