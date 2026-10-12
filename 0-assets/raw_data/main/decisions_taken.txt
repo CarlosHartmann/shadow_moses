@@ -86,6 +86,8 @@ Generations defined as: silent 1928-1945, Boomer 1946-1964, X 1965-1980, Millenn
 Political conservative:
 Did not feel comfortable classifying Christian flairs as conservative unless they included something additional to indicate it. But Christianity by itself comes in too many flavors to allow a Christian=conservative assumption.
 
+-it could be an idea to compare the rate of sg.they usage within the group-aligned communities and outside of them (cf. third-wave sociolinguist theory of projecting identities situationally)
+
 Questions for supervisor:
 Should I go through all included users' comment history to search for strings that self-identify as being from a English-speaking country/region?
 Age variable: binary (young/old), generation (silent, Boomer, X, Millennial, Z, xennial), or continuous variable based on birth year?
