@@ -98,3 +98,10 @@ I was pretty liberal/generous with including people from gendercritical. Their f
 Anti-porn was also taken as gender-political conservative stance.
 
 -some redpill subreddits have a system of "endorsed contributors" that are marked in the flair. This was of course used for annotation.
+
+-I had (currently still have) transgender subreddits in the female_or_diverse_group. But there is obvious overlap with the gender-politically-progressive group, which by and large could be defined as pro-trans. Removing the trans subreddits would minimize the "diverse" part of the group but it would also minimize the obvious overlap between the two groups.
+-Closely related to this point, I need to ensure a balance between subreddits when sampling for processing. How exactly that will be done, still needs to be determined.
+
+I added tumblrinaction to the gender_political_conservative group. It was an especially large group of 3.8K flairs. I figured this could risk skewing the group. And I didn't have the time at the time so I had a look at the first 544 flairs and ended it there.
+Also, while most "-kin" and mock pronoun flairs could be taken as a sign to include a user, I opted to be stricter as most people on there were self-hating trans people and edgy teenagers. I included only very specifically and somehwat "cleverly"/discourse-aware flairs to justify the "gender-politically conservative" categorization.
+I included some that claimed to be actually trans as that contrasts with the gender-progressive group while counterbalancing the many trans people there a bit.
