@@ -116,6 +116,9 @@ class CrossSubredditTests(unittest.TestCase):
                 output_dir / "quarterly_statistics.xlsx", read_only=True
             )
             rows = list(workbook["Quarterly counts"].iter_rows(values_only=True))
+            user_rows = list(workbook["Distinct users"].iter_rows(values_only=True))
+            overlap_rows = list(workbook["Overlap comments"].iter_rows(values_only=True))
+            overlap_user_rows = list(workbook["Overlap users"].iter_rows(values_only=True))
             self.assertNotIn("Warnings", workbook.sheetnames)
             workbook.close()
             self.assertEqual(rows[0][0], "quarter")
@@ -132,6 +135,36 @@ class CrossSubredditTests(unittest.TestCase):
             self.assertEqual(historical_counts[column["age_millennial"]], 1)
             self.assertEqual(historical_counts[column["age_old"]], 1)
             self.assertEqual(historical_counts[column["gender_male"]], 1)
+
+            user_column = {name: index for index, name in enumerate(user_rows[0])}
+            quarter_users = next(row for row in user_rows[1:] if row[0] == "2020-Q1")
+            self.assertEqual(quarter_users[user_column["baseline"]], 2)
+            self.assertEqual(quarter_users[user_column["age_millennial"]], 1)
+            self.assertEqual(quarter_users[user_column["age_young"]], 1)
+            self.assertEqual(quarter_users[user_column["gender_male"]], 1)
+            historical_users = next(
+                row for row in user_rows[1:] if row[0] == "2011-Q1"
+            )
+            self.assertEqual(historical_users[user_column["age_old"]], 1)
+
+            overlap_column = {name: index for index, name in enumerate(overlap_rows[0])}
+            alice_overlap = "age_millennial + age_young + gender_male"
+            self.assertEqual(len(overlap_column), 2)
+            overlap_quarter = next(row for row in overlap_rows[1:] if row[0] == "2020-Q1")
+            self.assertEqual(overlap_quarter[overlap_column[alice_overlap]], 4)
+            historical_overlap = next(
+                row for row in overlap_rows[1:] if row[0] == "2011-Q1"
+            )
+            self.assertEqual(historical_overlap[overlap_column[alice_overlap]], 1)
+            overlap_user_column = {
+                name: index for index, name in enumerate(overlap_user_rows[0])
+            }
+            self.assertEqual(
+                next(row for row in overlap_user_rows[1:] if row[0] == "2020-Q1")[
+                    overlap_user_column[alice_overlap]
+                ],
+                1,
+            )
 
 
 if __name__ == "__main__":

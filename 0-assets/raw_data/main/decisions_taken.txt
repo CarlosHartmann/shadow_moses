@@ -19,8 +19,7 @@ This filtering step, generally speaking, is only for broad (i.e. unsupervised) c
 The next step was grouping. Now, the groups of users were defined that the linguistic analysis will be based on.
 The groups are:
 baseline – as a neutral comparison, will contain anything from subreddits not contained in the other groups
-age_young – defined as including Millennials and everyone younger.
-age_old – defined as including Generation X and everyone older.
+age – taken from subreddits where age-containing flairs are either expected or were found when annotating the other groups. Annotations here will help to guess users' birth year and thus assign them to age-related groups.
 gender_male – defined as including all users who identify as male.
 gender_female_or_diverse – defined as including all users who identify as female or non-binary/diverse.
 political_conservative – defined as including all users who identify as politically conservative.
@@ -74,7 +73,7 @@ The use of feminine suffixes was sometimes the only hint at femaleness but consi
 
 "Got a Caterpillar Body and a Butterfly Brain" - wonderful quote, might use it.
 
-"Questioning" was not judged to be sufficient to be included in the "diverse" group because questioning can be part of cis-gendered experiences as well. And if there is no other element linking the person to womanhood, it could theoretically be a cis-gender man and therefore not a user to be included in the "woman or diverse" group.
+"Questioning" was not judged to be sufficient to be included in the "diverse" group because questioning can be part of cis-gendered experiences as well.
 
 LLM-annotated the ages because it became very tedious so I opted for it to convert my "X"-relevant tags to actual ages.
 The following example wowed me: "sdrawkcab siht dear: 61 became given_age 16 (the digits are reversed)."

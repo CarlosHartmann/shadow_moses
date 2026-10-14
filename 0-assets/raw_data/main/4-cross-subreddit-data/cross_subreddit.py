@@ -105,12 +105,16 @@ def load_grouped_users_and_ids(
     dict[str, set[str]],
     set[str],
     defaultdict[str, defaultdict[str, int]],
+    defaultdict[str, defaultdict[str, set[str]]],
     str | None,
 ]:
     groups_by_author: dict[str, set[str]] = defaultdict(set)
     original_ids: set[str] = set()
     counts: defaultdict[str, defaultdict[str, int]] = defaultdict(
         lambda: defaultdict(int)
+    )
+    distinct_users: defaultdict[str, defaultdict[str, set[str]]] = defaultdict(
+        lambda: defaultdict(set)
     )
     last_quarter = None
 
@@ -124,16 +128,62 @@ def load_grouped_users_and_ids(
             original_ids.add(comment_id(comment, line_number, path))
             if int(quarter[:4]) >= STATISTICS_START_YEAR:
                 counts[quarter][group] += 1
+                if author:
+                    distinct_users[quarter][group].add(author)
                 if last_quarter is None or quarter > last_quarter:
                     last_quarter = quarter
 
-    return groups_by_author, original_ids, counts, last_quarter
+    return groups_by_author, original_ids, counts, distinct_users, last_quarter
+
+
+def overlap_group_name(groups: set[str]) -> str | None:
+    if len(groups) < 2:
+        return None
+    return " + ".join(group for group in GROUPS if group in groups)
+
+
+def load_overlap_statistics(
+    grouped_dir: Path,
+    age_dir: Path,
+    groups_by_author: Mapping[str, set[str]],
+) -> tuple[
+    defaultdict[str, defaultdict[str, int]],
+    defaultdict[str, defaultdict[str, set[str]]],
+]:
+    comment_counts: defaultdict[str, defaultdict[str, int]] = defaultdict(
+        lambda: defaultdict(int)
+    )
+    distinct_users: defaultdict[str, defaultdict[str, set[str]]] = defaultdict(
+        lambda: defaultdict(set)
+    )
+    counted_comment_ids: set[str] = set()
+
+    for group in GROUPS:
+        path = group_path(group, grouped_dir, age_dir)
+        for line_number, _, comment in iter_comments(path):
+            author = author_key(comment)
+            overlap = overlap_group_name(groups_by_author.get(author, set()))
+            if overlap is None:
+                continue
+            quarter = quarter_for(comment, line_number, path)
+            if int(quarter[:4]) < STATISTICS_START_YEAR:
+                continue
+            distinct_users[quarter][overlap].add(author)
+            identifier = comment_id(comment, line_number, path)
+            if identifier not in counted_comment_ids:
+                counted_comment_ids.add(identifier)
+                comment_counts[quarter][overlap] += 1
+
+    return comment_counts, distinct_users
 
 
 def write_statistics(
     output_path: Path,
     quarters: list[str],
     counts: Mapping[str, Mapping[str, int]],
+    distinct_users: Mapping[str, Mapping[str, set[str]]],
+    overlap_comment_counts: Mapping[str, Mapping[str, int]],
+    overlap_distinct_users: Mapping[str, Mapping[str, set[str]]],
     run_info: list[tuple[str, str]],
 ) -> None:
     workbook = Workbook(write_only=True)
@@ -143,6 +193,39 @@ def write_statistics(
         quarter_counts = counts.get(quarter, {})
         sheet.append(
             [quarter, *(quarter_counts.get(group, 0) for group in STATISTICS_GROUPS)]
+        )
+    user_sheet = workbook.create_sheet("Distinct users")
+    user_sheet.append(["quarter", *STATISTICS_GROUPS])
+    for quarter in quarters:
+        quarter_users = distinct_users.get(quarter, {})
+        user_sheet.append(
+            [quarter, *(len(quarter_users.get(group, set())) for group in STATISTICS_GROUPS)]
+        )
+    overlap_groups = sorted(
+        {
+            overlap
+            for quarter_counts in overlap_comment_counts.values()
+            for overlap in quarter_counts
+        }
+        | {
+            overlap
+            for quarter_users in overlap_distinct_users.values()
+            for overlap in quarter_users
+        }
+    )
+    overlap_sheet = workbook.create_sheet("Overlap comments")
+    overlap_sheet.append(["quarter", *overlap_groups])
+    for quarter in quarters:
+        quarter_counts = overlap_comment_counts.get(quarter, {})
+        overlap_sheet.append(
+            [quarter, *(quarter_counts.get(overlap, 0) for overlap in overlap_groups)]
+        )
+    overlap_user_sheet = workbook.create_sheet("Overlap users")
+    overlap_user_sheet.append(["quarter", *overlap_groups])
+    for quarter in quarters:
+        quarter_users = overlap_distinct_users.get(quarter, {})
+        overlap_user_sheet.append(
+            [quarter, *(len(quarter_users.get(overlap, set())) for overlap in overlap_groups)]
         )
     info_sheet = workbook.create_sheet("Run info")
     for row in run_info:
@@ -160,8 +243,15 @@ def process_cross_subreddit_data(
     run_started = time.monotonic()
     run_started_at = datetime.now().isoformat(timespec="seconds")
     output_dir.mkdir(parents=True, exist_ok=True)
-    groups_by_author, original_ids, counts, last_quarter = load_grouped_users_and_ids(
-        grouped_dir, age_dir
+    (
+        groups_by_author,
+        original_ids,
+        counts,
+        distinct_users,
+        last_quarter,
+    ) = load_grouped_users_and_ids(grouped_dir, age_dir)
+    overlap_comment_counts, overlap_distinct_users = load_overlap_statistics(
+        grouped_dir, age_dir, groups_by_author
     )
     baseline_spill = output_dir / ".baseline.spill.jsonl"
     group_spills = {group: output_dir / f".{group}.spill.jsonl" for group in GROUPS}
@@ -191,6 +281,8 @@ def process_cross_subreddit_data(
                 quarter = quarter_for(comment, line_number, baseline_path)
                 if int(quarter[:4]) >= STATISTICS_START_YEAR:
                     counts[quarter]["baseline"] += 1
+                    if author:
+                        distinct_users[quarter]["baseline"].add(author)
                     if last_quarter is None or quarter > last_quarter:
                         last_quarter = quarter
 
@@ -208,6 +300,13 @@ def process_cross_subreddit_data(
                 if int(quarter[:4]) >= STATISTICS_START_YEAR:
                     if last_quarter is None or quarter > last_quarter:
                         last_quarter = quarter
+                    for group in groups:
+                        if author:
+                            distinct_users[quarter][group].add(author)
+                    overlap = overlap_group_name(groups)
+                    if overlap:
+                        overlap_comment_counts[quarter][overlap] += 1
+                        overlap_distinct_users[quarter][overlap].add(author)
                 for group in GROUPS:
                     if group not in groups:
                         continue
@@ -244,7 +343,15 @@ def process_cross_subreddit_data(
         ("new unique comments", f"{len(cross_comment_ids):,}"),
         ("total runtime", f"{total_seconds:.2f} seconds"),
     ]
-    write_statistics(output_dir / "quarterly_statistics.xlsx", quarters, counts, run_info)
+    write_statistics(
+        output_dir / "quarterly_statistics.xlsx",
+        quarters,
+        counts,
+        distinct_users,
+        overlap_comment_counts,
+        overlap_distinct_users,
+        run_info,
+    )
 
     for group in GROUPS:
         print(f"{group}.jsonl: {cross_group_counts[group]:,} additional comments")
