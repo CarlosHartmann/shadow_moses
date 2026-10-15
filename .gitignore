@@ -67,3 +67,5 @@
 0-assets/raw_data/main/4-cross-subreddit-data/cross_subreddit_data/age_silent.jsonl
 0-assets/raw_data/main/4-cross-subreddit-data/cross_subreddit_data/age_millennial.jsonl
 0-assets/raw_data/main/4-cross-subreddit-data/cross_subreddit_data/age_boomer.jsonl
+0-assets/raw_data/main/5-baseline-reduction/reduced_baseline.jsonl
+0-assets/raw_data/main/6-unique-usernames-and-subreddits/.progress.sqlite3

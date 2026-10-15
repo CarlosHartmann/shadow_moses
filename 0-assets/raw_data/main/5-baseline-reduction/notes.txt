@@ -1,0 +1,4 @@
+With the script in this directory, a more sensible baseline is created as currently, it contains everything not contained in any of the groups (original or cross-subreddit-collected).
+This should be done at random but using a seed so that the results are reproducible.
+The baseline should contain exactly 1M comments.
+Let the script report its progress to console.
