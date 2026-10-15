@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator, Mapping
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 
 
 HERE = Path(__file__).resolve().parent
@@ -28,6 +28,7 @@ AGE_GROUPS = (
     "age_old",
 )
 DEFAULT_BASELINE = GROUPED_DIR / "baseline.jsonl"
+GROUPED_FLAIRS_PATH = HERE.parent / "3a-grouping" / "grouped_flairs.xlsx"
 DEFAULT_FILTERED_INPUT = HERE.parent / "2-filtering" / "filtered_comments.jsonl"
 DEFAULT_OUTPUT_DIR = HERE / "cross_subreddit_data"
 STATISTICS_START_YEAR = 2010
@@ -136,6 +137,22 @@ def load_grouped_users_and_ids(
     return groups_by_author, original_ids, counts, distinct_users, last_quarter
 
 
+def load_deleted_authors(path: Path) -> set[str]:
+    """Users deleted from the gender or age groups; they belong in no group and not in the baseline."""
+    if not path.exists():
+        return set()
+    workbook = load_workbook(path, read_only=True)
+    deleted: set[str] = set()
+    if "user_group_overrides" in workbook.sheetnames:
+        for user, family, keep in workbook["user_group_overrides"].iter_rows(
+            min_row=2, max_col=3, values_only=True
+        ):
+            if user and family in ("gender", "age") and keep == "none":
+                deleted.add(str(user).casefold())
+    workbook.close()
+    return deleted
+
+
 def overlap_group_name(groups: set[str]) -> str | None:
     if len(groups) < 2:
         return None
@@ -239,6 +256,7 @@ def process_cross_subreddit_data(
     filtered_path: Path,
     output_dir: Path,
     age_dir: Path = AGE_DIR,
+    excluded_authors: set[str] | None = None,
 ) -> None:
     run_started = time.monotonic()
     run_started_at = datetime.now().isoformat(timespec="seconds")
@@ -274,7 +292,7 @@ def process_cross_subreddit_data(
             for line_number, line, comment in iter_comments(baseline_path):
                 baseline_comments += 1
                 author = author_key(comment)
-                if author in groups_by_author:
+                if author in groups_by_author or author in (excluded_authors or ()):
                     baseline_removed += 1
                     continue
                 baseline_output.write(line)
@@ -380,6 +398,7 @@ def main() -> None:
         args.filtered,
         args.output_dir,
         args.age_dir,
+        load_deleted_authors(GROUPED_FLAIRS_PATH),
     )
 
 

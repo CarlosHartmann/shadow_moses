@@ -1,0 +1,43 @@
+This step audits users who fall into groups that cannot both be true, and records how each case was decided.
+
+Scripts
+- overlap_audit.py: finds the contradictory overlaps (users from 2012 on, as in step 4) and writes overlap_audit.xlsx (sheets Summary, Users, Evidence).
+- apply_decisions.py: rebuilds two override sheets in ../3a-grouping/grouped_flairs.xlsx from the Decisions and Gender report sheets of overlap_audit.xlsx (backup in ../3a-grouping/annotation_backup first). Run it after editing the decisions, then re-run 3a, 3b, 4 and onward.
+
+Contradictory overlaps (not tolerated)
+- different generations; old and young; old with millennial/Z; young with silent/boomer/X
+- male and female_or_diverse
+- political conservative and progressive
+- gender-political conservative and progressive (none found)
+Overlaps like age + gender are possible for one person and are fine.
+
+Why the overlaps happen
+- Age: the 3b split is correct per comment, but a user's flairs imply different birth year ranges over time (updated flairs, stale flairs, wide ranges near a cutoff).
+- Gender and political: flair annotation or genuinely changing users.
+
+Principle: every decision applies only to the user named, never to other users sharing a flair. Flair annotations in grouped_flairs.xlsx are therefore left untouched; decisions are stored per user (user_group_overrides sheet).
+
+Decisions: political (15 users)
+- The Decisions sheet gives the group each user belongs to ("none" for liberal_on_guns). 3a/grouping.py bars the user from the other political group (for "none", from both).
+- Earlier flair-level clears in grouped_flairs.xlsx were reverted (they would have affected other users).
+
+Decisions: age (871 users, plus -caturday-night- decided by hand as 1979)
+- Rule: take the highest lo and the lowest hi of all birth year ranges derived from the user's flairs and posting years (age comments from 2012 on).
+- 467 users: common span lies inside one group. Recorded as "birth year(s) ..." in Decisions.
+- 99 users: common span crosses a group boundary. Same span recorded; the majority bucket (existing tie-break, older bucket on ties) then decides.
+- 305 users had no common year because flairs went stale (e.g. "16" kept for years). For these the range of each flair's first appearance is used instead. This resolved 198 users.
+- 107 users still have no common year: marked "Needs decision" in Decisions (empty value; flairs and ranges in columns D/E). Enter "birth year YYYY" or "birth years YYYY-YYYY" there.
+- Of the 107, 85 young users (teenagers/young adults, flair-derived ranges all within 1995-1999) were set to the average of the midpoints of all their ranges, as decided. 3 users (actamis, afterburneranon, nooblevitamins) were set to "delete" by hand: they are removed from the age group (3a) and from the baseline (4). 8 non-teenagers were decided by hand afterwards (cooldude_4000, granny_knows_best, hey_laaady, notjimirsay, snowblindalbino, theyearofthe_rat, thisini, zzsjourney); see the Decisions sheet.
+- Decisions rows starting with "birth year" go to the age_user_overrides sheet; ../3b-age-grouping/deduce_birthyear.py then uses that range for all of the user's comments instead of the flair-derived ones.
+
+Decisions: gender (70 users)
+- Column A of the Gender report sheet holds the decision: male, female, diverse or delete.
+- female and diverse are currently synonyms for gender_female_or_diverse.
+- delete (users who transitioned within the data timespan): removed from both gender groups by 3a/grouping.py, and their comments are also removed from the baseline in 4-cross-subreddit-data/cross_subreddit.py.
+
+Why users were deleted (age and gender)
+- Users were removed from the age and gender groups (and from the baseline) when their flairs suggested that they had lied in non-minor ways, or, for gender, had transitioned within the data timespan. Minor inconsistencies were resolved with the rules above instead.
+
+Open points
+- All decisions on the Decisions and Gender report sheets are complete.
+- Nothing is regenerated yet: re-run 3a, 3b, 4 and onward; 5 can then be re-run to check that no contradictory overlaps remain.

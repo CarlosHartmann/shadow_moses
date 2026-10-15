@@ -5,14 +5,14 @@ from pathlib import Path
 
 
 MAIN_DIRECTORY = Path(__file__).resolve().parent.parent
-OUTPUT_DIRECTORY = MAIN_DIRECTORY / "6-unique-usernames-and-subreddits"
+OUTPUT_DIRECTORY = MAIN_DIRECTORY / "7-unique-usernames-and-subreddits"
 INPUT_DIRECTORIES = (
     MAIN_DIRECTORY / "3a-grouping" / "grouped_subreddit_data",
     MAIN_DIRECTORY / "3b-age-grouping",
     MAIN_DIRECTORY / "4-cross-subreddit-data" / "cross_subreddit_data",
 )
 INPUT_FILES = (
-    MAIN_DIRECTORY / "5-baseline-reduction" / "reduced_baseline.jsonl",
+    MAIN_DIRECTORY / "6-baseline-reduction" / "reduced_baseline.jsonl",
 )
 BATCH_LINES = 50_000
 PROGRESS_LINES = 5_000_000
@@ -42,7 +42,7 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
             """
         )
 
-        for path in files:
+        for file_number, path in enumerate(files, start=1):
             relative_path = path.relative_to(MAIN_DIRECTORY).as_posix()
             stat = path.stat()
             signature = (stat.st_size, stat.st_mtime_ns)
@@ -51,7 +51,10 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
                 (relative_path,),
             ).fetchone()
             if previous == signature:
-                print(f"Skipping completed file: {relative_path}", flush=True)
+                print(
+                    f"File {file_number}/{len(files)}: skipping completed {relative_path}",
+                    flush=True,
+                )
                 continue
             if previous is not None:
                 raise RuntimeError(
@@ -59,7 +62,11 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
                     f"Remove {database_path} to rebuild from scratch."
                 )
 
-            print(f"Processing {relative_path} ({stat.st_size:,} bytes)", flush=True)
+            print(
+                f"File {file_number}/{len(files)}: processing {relative_path} "
+                f"({stat.st_size:,} bytes)",
+                flush=True,
+            )
             line_count = 0
             malformed_count = 0
             with path.open("rb") as source:

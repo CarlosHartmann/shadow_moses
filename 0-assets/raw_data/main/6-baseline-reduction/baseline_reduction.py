@@ -31,7 +31,9 @@ def report_progress(
     started_at: float,
     next_percent: int,
 ) -> int:
-    percent = min(100, input_file.tell() * 100 // input_size) if input_size else 100
+    # tell() on a text file is disabled while iterating lines; the raw buffer position is close enough.
+    position = input_file.buffer.tell()
+    percent = min(100, position * 100 // input_size) if input_size else 100
     if percent >= next_percent:
         elapsed = time.monotonic() - started_at
         print(f"{stage}: {percent}% ({elapsed:.0f}s elapsed).", flush=True)

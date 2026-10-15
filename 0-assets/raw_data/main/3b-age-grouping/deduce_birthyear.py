@@ -16,6 +16,7 @@ HERE = Path(__file__).resolve().parent
 GROUPING_DIR = HERE.parent / "3a-grouping"
 GROUPED_FLAIRS_PATH = GROUPING_DIR / "grouped_flairs.xlsx"
 SHEET_NAME = "age"
+OVERRIDE_SHEET = "age_user_overrides"
 DEFAULT_INPUT = GROUPING_DIR / "grouped_subreddit_data" / "age.jsonl"
 DEFAULT_OUTPUT = HERE / "age.jsonl"
 OUTPUT_FIELD = "deduced_birthyear_range"
@@ -103,11 +104,32 @@ def load_annotations(path: Path) -> tuple[dict[tuple[str, str], dict], Counter]:
     return annotations, problems
 
 
+def load_user_overrides(path: Path) -> dict[str, tuple[int, int]]:
+    """Per-user birth year (range) decided from the overlap audit; wins over flair-derived ranges."""
+    workbook = load_workbook(path, read_only=True)
+    if OVERRIDE_SHEET not in workbook.sheetnames:
+        workbook.close()
+        return {}
+    overrides = {}
+    for user, low, high in workbook[OVERRIDE_SHEET].iter_rows(
+        min_row=2, max_col=3, values_only=True
+    ):
+        if user and low is not None and high is not None:
+            overrides[str(user).casefold()] = (int(low), int(high))
+    workbook.close()
+    return overrides
+
+
 def comment_year(comment: dict) -> int:
     return datetime.fromtimestamp(float(comment["created_utc"]), tz=timezone.utc).year
 
 
-def annotate_file(input_path: Path, output_path: Path, annotations: dict) -> Counter:
+def annotate_file(
+    input_path: Path,
+    output_path: Path,
+    annotations: dict,
+    user_overrides: dict[str, tuple[int, int]] | None = None,
+) -> Counter:
     stats = Counter()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with input_path.open("r", encoding="utf-8") as source, output_path.open(
@@ -123,6 +145,9 @@ def annotate_file(input_path: Path, output_path: Path, annotations: dict) -> Cou
             )
             annotation = annotations.get(key)
             result = birth_range_for(annotation, comment_year(comment)) if annotation else None
+            override = (user_overrides or {}).get(str(comment.get("author") or "").casefold())
+            if override:
+                result = override
             comment[OUTPUT_FIELD] = list(result) if result else None
             stats["comments"] += 1
             stats["annotated" if result else "no birth year"] += 1
@@ -140,7 +165,9 @@ def main() -> None:
     annotations, problems = load_annotations(args.flairs)
     for message, count in problems.items():
         print(f"warning: {message} in {count} rows (ignored)")
-    stats = annotate_file(args.input, args.output, annotations)
+    stats = annotate_file(
+        args.input, args.output, annotations, load_user_overrides(args.flairs)
+    )
     print(
         f"{args.input.name}: {stats['comments']:,} comments, "
         f"{stats['annotated']:,} with {OUTPUT_FIELD}, {stats['no birth year']:,} without"

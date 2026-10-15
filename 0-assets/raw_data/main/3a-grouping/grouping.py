@@ -36,6 +36,13 @@ AGE_ANNOTATION_COLUMNS = (
     "given_description",
 )
 LEGACY_RELEVANT_MARKER = "X"
+USER_OVERRIDE_SHEET = "user_group_overrides"
+# Users with an override keep only the decided group of the family ("none" keeps neither).
+OVERRIDE_FAMILIES = {
+    "age": (AGE_GROUP,),
+    "gender": ("gender_male", "gender_female_or_diverse"),
+    "political": ("political_conservative", "political_progressive"),
+}
 GROUP_ORDER = (
     AGE_GROUP,
     "gender_male",
@@ -236,6 +243,22 @@ def load_relevant_flairs(
     return known, relevant
 
 
+def load_user_exclusions(path: Path) -> dict[str, set[str]]:
+    """Map author to groups they are barred from, per the user_group_overrides sheet."""
+    if not path.exists():
+        return {}
+    workbook = load_workbook(path, read_only=True)
+    exclusions: dict[str, set[str]] = defaultdict(set)
+    if USER_OVERRIDE_SHEET in workbook.sheetnames:
+        for user, family, keep in workbook[USER_OVERRIDE_SHEET].iter_rows(
+            min_row=2, max_col=3, values_only=True
+        ):
+            if user and family in OVERRIDE_FAMILIES:
+                exclusions[str(user).casefold()] |= set(OVERRIDE_FAMILIES[family]) - {keep}
+    workbook.close()
+    return exclusions
+
+
 def format_duration(seconds: float) -> str:
     hours, remainder = divmod(int(seconds), 3600)
     minutes, secs = divmod(remainder, 60)
@@ -255,6 +278,7 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
     total_comments = 0
 
     print(f"Reading {input_path}", flush=True)
+    user_exclusions = load_user_exclusions(HERE / GROUPED_FLAIRS_NAME)
     flair_annotations = load_relevant_flairs(HERE / GROUPED_FLAIRS_NAME)
     if flair_annotations is None:
         print(f"No {GROUPED_FLAIRS_NAME} yet; flair relevance is not applied.", flush=True)
@@ -277,6 +301,10 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
                     subreddit = str(comment.get("subreddit", "")).casefold()
                     pair = (subreddit, flair_of(comment))
                     flair_combos[group].add(pair)
+                    if group in user_exclusions.get(
+                        str(comment.get("author") or "").casefold(), ()
+                    ):
+                        continue
                     if (
                         known_flairs is not None
                         and relevant_flairs is not None
