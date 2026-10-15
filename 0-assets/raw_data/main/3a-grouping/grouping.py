@@ -38,15 +38,17 @@ AGE_ANNOTATION_COLUMNS = (
 LEGACY_RELEVANT_MARKER = "X"
 USER_OVERRIDE_SHEET = "user_group_overrides"
 # Users with an override keep only the decided group of the family ("none" keeps neither).
+# A decided group outside the family (e.g. gender_political_progressive) also takes the user's
+# comments from the family's subreddits regardless of flair and score.
 OVERRIDE_FAMILIES = {
     "age": (AGE_GROUP,),
-    "gender": ("gender_male", "gender_female_or_diverse"),
+    "gender": ("gender_male", "gender_female"),
     "political": ("political_conservative", "political_progressive"),
 }
 GROUP_ORDER = (
     AGE_GROUP,
     "gender_male",
-    "gender_female_or_diverse",
+    "gender_female",
     "political_conservative",
     "political_progressive",
     "gender_political_conservative",
@@ -57,7 +59,7 @@ FLAIR_RELEVANCE_GROUPS = frozenset(
     {
         AGE_GROUP,
         "gender_male",
-        "gender_female_or_diverse",
+        "gender_female",
         "political_conservative",
         "political_progressive",
         "gender_political_conservative",
@@ -243,20 +245,26 @@ def load_relevant_flairs(
     return known, relevant
 
 
-def load_user_exclusions(path: Path) -> dict[str, set[str]]:
-    """Map author to groups they are barred from, per the user_group_overrides sheet."""
-    if not path.exists():
-        return {}
-    workbook = load_workbook(path, read_only=True)
+def load_user_overrides(
+    path: Path,
+) -> tuple[dict[str, set[str]], dict[str, dict[str, tuple[str, ...]]]]:
+    """Per author: groups they are barred from, and forced groups with the family they replace."""
     exclusions: dict[str, set[str]] = defaultdict(set)
+    inclusions: dict[str, dict[str, tuple[str, ...]]] = defaultdict(dict)
+    if not path.exists():
+        return exclusions, inclusions
+    workbook = load_workbook(path, read_only=True)
     if USER_OVERRIDE_SHEET in workbook.sheetnames:
         for user, family, keep in workbook[USER_OVERRIDE_SHEET].iter_rows(
             min_row=2, max_col=3, values_only=True
         ):
             if user and family in OVERRIDE_FAMILIES:
-                exclusions[str(user).casefold()] |= set(OVERRIDE_FAMILIES[family]) - {keep}
+                author = str(user).casefold()
+                exclusions[author] |= set(OVERRIDE_FAMILIES[family]) - {keep}
+                if keep in GROUP_ORDER and keep not in OVERRIDE_FAMILIES[family]:
+                    inclusions[author][keep] = OVERRIDE_FAMILIES[family]
     workbook.close()
-    return exclusions
+    return exclusions, inclusions
 
 
 def format_duration(seconds: float) -> str:
@@ -278,7 +286,7 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
     total_comments = 0
 
     print(f"Reading {input_path}", flush=True)
-    user_exclusions = load_user_exclusions(HERE / GROUPED_FLAIRS_NAME)
+    user_exclusions, user_inclusions = load_user_overrides(HERE / GROUPED_FLAIRS_NAME)
     flair_annotations = load_relevant_flairs(HERE / GROUPED_FLAIRS_NAME)
     if flair_annotations is None:
         print(f"No {GROUPED_FLAIRS_NAME} yet; flair relevance is not applied.", flush=True)
@@ -297,16 +305,27 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
                 quarter = quarter_for(comment, line_number)
                 if last_quarter is None or quarter > last_quarter:
                     last_quarter = quarter
-                for group in matching_groups(comment):
-                    subreddit = str(comment.get("subreddit", "")).casefold()
-                    pair = (subreddit, flair_of(comment))
-                    flair_combos[group].add(pair)
-                    if group in user_exclusions.get(
-                        str(comment.get("author") or "").casefold(), ()
+                author = str(comment.get("author") or "").casefold()
+                subreddit = str(comment.get("subreddit", "")).casefold()
+                groups = matching_groups(comment)
+                forced_groups = user_inclusions.get(author, {})
+                for forced_group, replaced in forced_groups.items():
+                    # Ignores flair and score: the user's comments where they would have been in the replaced groups.
+                    if forced_group not in groups and any(
+                        subreddit in GROUP_SUBREDDITS[name]
+                        for name in (*replaced, forced_group)
                     ):
+                        groups.append(forced_group)
+                for group in groups:
+                    pair = (subreddit, flair_of(comment))
+                    if subreddit in GROUP_SUBREDDITS[group]:
+                        flair_combos[group].add(pair)
+                    if group in user_exclusions.get(author, ()):
                         continue
+                    forced = group in forced_groups
                     if (
-                        known_flairs is not None
+                        not forced
+                        and known_flairs is not None
                         and relevant_flairs is not None
                         and group in FLAIR_RELEVANCE_GROUPS
                         and float(comment["created_utc"]) >= FLAIR_START

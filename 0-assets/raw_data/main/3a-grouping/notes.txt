@@ -2,7 +2,7 @@ Groups:
 baseline
 age
 gender_male
-gender_female_or_diverse
+gender_female
 political_conservative
 political_progressive
 gender_political_conservative
@@ -15,8 +15,9 @@ For each group, here is what to pull out of the data.
 age:
 The age group is one group (not split into young and old here; that happens in ../3b-age-grouping). Only include comments if their flair is relevant on the "age" sheet of grouped_flairs.xlsx. A flair is relevant there if at least one of the annotation columns given_age, given_birthyear, given_agerange, given_birthyear_range, given_generation or given_description has a value. Rows with none of these filled in are not processable and therefore irrelevant. A leftover "X" (the old relevance marker) does not count as an annotation. The same subreddit and flair can occupy several rows of the age sheet; it is relevant if any of its rows is annotated.
 
-gender_male, gender_female_or_diverse:
+gender_male, gender_female:
 Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
+gender_female stands for cis women; flairs of trans men (FTM as an umbrella term) are in it too, and also on the gender_political_progressive sheet. Trans women and non-binary flairs are annotated on the gender_political_progressive sheet instead (their subreddits are in subreddit_lists/gender_political_progressive.txt, and the score filter below applies).
 
 political_conservative, political_progressive, gender_political_conservative, gender_political_progressive:
 Only include comments with score at or above 5.
@@ -35,6 +36,8 @@ The count starts with 2010, not earlier.
 The age group is left out of these statistics; the group_by scripts in ../3b-age-grouping produce the age statistics.
 
 Ensure you don't load the entire dataset into memory at once.
+
+User overrides: the sheet user_group_overrides in grouped_flairs.xlsx (written by ../5-overlap-audit/apply_decisions.py) bars single users from the other groups of their family (age, gender, political). If the decided group lies outside the family (diverse users go to gender_political_progressive), the user's comments from the family's subreddits are also put into that group, ignoring flair and score.
 
 Log the time it takes and output it along with the statistics.
 

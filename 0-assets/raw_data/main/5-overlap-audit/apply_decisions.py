@@ -23,11 +23,12 @@ BACKUP_DIR = GROUPING_DIR / "annotation_backup"
 AGE_SHEET = "age_user_overrides"
 GROUP_SHEET = "user_group_overrides"
 BIRTH_YEAR = re.compile(r"^birth years? (\d{4})(?:-(\d{4}))?$")
-# Gender report decision -> group to keep ("none" removes the user from both gender groups).
+# Gender report decision -> group to keep; a group outside male/female also takes the user's
+# comments from its subreddits ("none" removes the user from both gender groups).
 GENDER_DECISIONS = {
     "male": "gender_male",
-    "female": "gender_female_or_diverse",
-    "diverse": "gender_female_or_diverse",
+    "female": "gender_female",
+    "diverse": "gender_political_progressive",
     "delete": "none",
 }
 POLITICAL_FAMILY = "political"

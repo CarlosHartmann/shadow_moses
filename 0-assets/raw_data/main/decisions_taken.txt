@@ -21,7 +21,7 @@ The groups are:
 baseline – as a neutral comparison, will contain anything from subreddits not contained in the other groups
 age – taken from subreddits where age-containing flairs are either expected or were found when annotating the other groups. Annotations here will help to guess users' birth year and thus assign them to age-related groups.
 gender_male – defined as including all users who identify as male.
-gender_female_or_diverse – defined as including all users who identify as female or non-binary/diverse.
+gender_female – defined as including all users who identify as cis female.
 political_conservative – defined as including all users who identify as politically conservative.
 political_progressive – defined as including all users who identify as politically progressive.
 gender_political_conservative – defined as all users who are conservative specifically with regards to gender politics.
@@ -104,3 +104,7 @@ Anti-porn was also taken as gender-political conservative stance.
 I added tumblrinaction to the gender_political_conservative group. It was an especially large group of 3.8K flairs. I figured this could risk skewing the group. And I didn't have the time at the time so I had a look at the first 544 flairs and ended it there.
 Also, while most "-kin" and mock pronoun flairs could be taken as a sign to include a user, I opted to be stricter as most people on there were self-hating trans people and edgy teenagers. I included only very specifically and somehwat "cleverly"/discourse-aware flairs to justify the "gender-politically conservative" categorization.
 I included some that claimed to be actually trans as that contrasts with the gender-progressive group while counterbalancing the many trans people there a bit.
+
+I realized that the 5-vote-score filter does not work: the excluded comments are added back in by the cross-subreddit-data addition step. It only works if there are no on-subreddit comments for a user that go over the 5-vote threshhold. So it's fair enough but could also be removed, maybe.
+
+At this late point in time, I pivoted to making the female group just gender_female and to define it as "socialized as female", meaning that cis women and trans men were included, but no genderqueer, non-binary, trans-women, and others anymore.

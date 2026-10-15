@@ -1,12 +1,12 @@
 This step audits users who fall into groups that cannot both be true, and records how each case was decided.
 
 Scripts
-- overlap_audit.py: finds the contradictory overlaps (users from 2012 on, as in step 4) and writes overlap_audit.xlsx (sheets Summary, Users, Evidence).
+- overlap_audit.py: finds the contradictory overlaps (users from 2012 on, as in step 4) and writes overlap_audit_check.xlsx (sheets Summary, Users, Evidence). overlap_audit.xlsx holds the decisions (sheets Decisions, Age report, Gender report) and is never overwritten by the script; a clean check run shows no users in the Users sheet.
 - apply_decisions.py: rebuilds two override sheets in ../3a-grouping/grouped_flairs.xlsx from the Decisions and Gender report sheets of overlap_audit.xlsx (backup in ../3a-grouping/annotation_backup first). Run it after editing the decisions, then re-run 3a, 3b, 4 and onward.
 
 Contradictory overlaps (not tolerated)
 - different generations; old and young; old with millennial/Z; young with silent/boomer/X
-- male and female_or_diverse
+- male and female
 - political conservative and progressive
 - gender-political conservative and progressive (none found)
 Overlaps like age + gender are possible for one person and are fine.
@@ -32,7 +32,7 @@ Decisions: age (871 users, plus -caturday-night- decided by hand as 1979)
 
 Decisions: gender (70 users)
 - Column A of the Gender report sheet holds the decision: male, female, diverse or delete.
-- female and diverse are currently synonyms for gender_female_or_diverse.
+- female is gender_female (cis women). diverse (trans and non-binary users) now means gender_political_progressive: the user is barred from gender_male and gender_female, and 3a/grouping.py puts all their comments from the male/female/progressive gender subreddits into gender_political_progressive regardless of flair and score.
 - delete (users who transitioned within the data timespan): removed from both gender groups by 3a/grouping.py, and their comments are also removed from the baseline in 4-cross-subreddit-data/cross_subreddit.py.
 
 Why users were deleted (age and gender)

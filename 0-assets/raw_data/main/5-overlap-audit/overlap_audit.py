@@ -48,8 +48,8 @@ def contradictions(groups: set[str]) -> dict[str, set[str]]:
         add("old and young generation", {"age_old"} | groups & YOUNG_GENERATIONS)
     if "age_young" in groups and groups & OLD_GENERATIONS:
         add("young and old generation", {"age_young"} | groups & OLD_GENERATIONS)
-    if {"gender_male", "gender_female_or_diverse"} <= groups:
-        add("male and female_or_diverse", {"gender_male", "gender_female_or_diverse"})
+    if {"gender_male", "gender_female"} <= groups:
+        add("male and female", {"gender_male", "gender_female"})
     if {"political_conservative", "political_progressive"} <= groups:
         add("conservative and progressive", {"political_conservative", "political_progressive"})
     if {"gender_political_conservative", "gender_political_progressive"} <= groups:
@@ -151,7 +151,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--grouped-dir", type=Path, default=GROUPED_DIR)
     parser.add_argument("--age-dir", type=Path, default=AGE_DIR)
-    parser.add_argument("--output", type=Path, default=HERE / "overlap_audit.xlsx")
+    parser.add_argument("--output", type=Path, default=HERE / "overlap_audit_check.xlsx")
     args = parser.parse_args()
     run(args.grouped_dir, args.age_dir, args.output)
 

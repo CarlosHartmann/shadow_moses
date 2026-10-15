@@ -36,7 +36,7 @@ AUTHOR_SELECTION_START = datetime(2012, 1, 1, tzinfo=timezone.utc).timestamp()
 GROUPS = (
     *AGE_GROUPS,
     "gender_male",
-    "gender_female_or_diverse",
+    "gender_female",
     "political_conservative",
     "political_progressive",
     "gender_political_conservative",
