@@ -26,12 +26,14 @@ Decisions: age (871 users, plus -caturday-night- decided by hand as 1979)
 - 467 users: common span lies inside one group. Recorded as "birth year(s) ..." in Decisions.
 - 99 users: common span crosses a group boundary. Same span recorded; the majority bucket (existing tie-break, older bucket on ties) then decides.
 - 305 users had no common year because flairs went stale (e.g. "16" kept for years). For these the range of each flair's first appearance is used instead. This resolved 198 users.
-- 107 users still have no common year: marked "Needs decision" in Decisions (empty value; flairs and ranges in columns D/E). Enter "birth year YYYY" or "birth years YYYY-YYYY" there.
-- Of the 107, 85 young users (teenagers/young adults, flair-derived ranges all within 1995-1999) were set to the average of the midpoints of all their ranges, as decided. 3 users (actamis, afterburneranon, nooblevitamins) were set to "delete" by hand: they are removed from the age group (3a) and from the baseline (4). 8 non-teenagers were decided by hand afterwards (cooldude_4000, granny_knows_best, hey_laaady, notjimirsay, snowblindalbino, theyearofthe_rat, thisini, zzsjourney); see the Decisions sheet.
+- 107 users had no common year even by first appearance: marked "Needs decision" in Decisions (flairs and ranges in columns D/E) and then decided as follows.
+- 85 young users (teenagers/young adults, flair-derived ranges all within 1995-1999) were set to the average of the midpoints of all their ranges.
+- 14 users were given a birth year (range) by hand, among them three older users (granny_knows_best, theyearofthe_rat, zzsjourney).
+- 8 users were set to "delete" by hand: actamis, afterburneranon, nooblevitamins, cooldude_4000, hey_laaady, notjimirsay, snowblindalbino, thisini. They are removed from the age group (3a) and from the baseline (4).
 - Decisions rows starting with "birth year" go to the age_user_overrides sheet; ../3b-age-grouping/deduce_birthyear.py then uses that range for all of the user's comments instead of the flair-derived ones.
 
 Decisions: gender (70 users)
-- Column A of the Gender report sheet holds the decision: male, female, diverse or delete.
+- Column A of the Gender report sheet holds the decision: male, female, diverse or delete (15 male, 4 female, 24 diverse, 27 delete).
 - female is gender_female (cis women). diverse (trans and non-binary users) now means gender_political_progressive: the user is barred from gender_male and gender_female, and 3a/grouping.py puts all their comments from the male/female/progressive gender subreddits into gender_political_progressive regardless of flair and score.
 - delete (users who transitioned within the data timespan): removed from both gender groups by 3a/grouping.py, and their comments are also removed from the baseline in 4-cross-subreddit-data/cross_subreddit.py.
 
@@ -39,5 +41,4 @@ Why users were deleted (age and gender)
 - Users were removed from the age and gender groups (and from the baseline) when their flairs suggested that they had lied in non-minor ways, or, for gender, had transitioned within the data timespan. Minor inconsistencies were resolved with the rules above instead.
 
 Open points
-- All decisions on the Decisions and Gender report sheets are complete.
-- Nothing is regenerated yet: re-run 3a, 3b, 4 and onward; 5 can then be re-run to check that no contradictory overlaps remain.
+- Re-run of 3a-7 after all decisions: no age, generation, male/female or political (conservative/progressive) overlaps remained in the quarterly statistics of step 4. 9 users overlapped in gender_political_conservative + gender_political_progressive, all through GenderCritical flairs that mention trans identities (e.g. "AFAB Transwomyn wuw"; see overlap_audit_check.xlsx). Decided: they stay in gender_political_conservative and are removed from gender_political_progressive (Decisions sheet, family "gender_political" in user_group_overrides). This takes effect with the next re-run of 3a-7.

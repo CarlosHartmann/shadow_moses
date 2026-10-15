@@ -44,6 +44,7 @@ OVERRIDE_FAMILIES = {
     "age": (AGE_GROUP,),
     "gender": ("gender_male", "gender_female"),
     "political": ("political_conservative", "political_progressive"),
+    "gender_political": ("gender_political_conservative", "gender_political_progressive"),
 }
 GROUP_ORDER = (
     AGE_GROUP,

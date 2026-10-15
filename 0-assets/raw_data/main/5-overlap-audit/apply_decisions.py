@@ -32,6 +32,7 @@ GENDER_DECISIONS = {
     "delete": "none",
 }
 POLITICAL_FAMILY = "political"
+GENDER_POLITICAL_FAMILY = "gender_political"
 AGE_FAMILY = "age"
 GENDER_FAMILY = "gender"
 
@@ -47,6 +48,8 @@ def collect_decisions(audit_path: Path):
             age[str(user).casefold()] = (int(match[1]), int(match[2] or match[1]))
         elif user and (value.startswith("political_") or value == "none"):
             groups[(str(user).casefold(), POLITICAL_FAMILY)] = value
+        elif user and value.startswith("gender_political_"):
+            groups[(str(user).casefold(), GENDER_POLITICAL_FAMILY)] = value
         elif user and value == "delete":
             groups[(str(user).casefold(), AGE_FAMILY)] = "none"
     for row in workbook["Gender report"].iter_rows(min_row=2, max_col=2, values_only=True):

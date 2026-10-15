@@ -71,3 +71,5 @@
 0-assets/raw_data/main/6-unique-usernames-and-subreddits/.progress.sqlite3
 0-assets/raw_data/main/6-baseline-reduction/reduced_baseline.jsonl
 0-assets/raw_data/main/7-unique-usernames-and-subreddits/.progress.sqlite3
+0-assets/raw_data/main/4-cross-subreddit-data/cross_subreddit_data/gender_female.jsonl
+0-assets/raw_data/main/3a-grouping/grouped_subreddit_data/gender_female.jsonl

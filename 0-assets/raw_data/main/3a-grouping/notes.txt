@@ -37,7 +37,7 @@ The age group is left out of these statistics; the group_by scripts in ../3b-age
 
 Ensure you don't load the entire dataset into memory at once.
 
-User overrides: the sheet user_group_overrides in grouped_flairs.xlsx (written by ../5-overlap-audit/apply_decisions.py) bars single users from the other groups of their family (age, gender, political). If the decided group lies outside the family (diverse users go to gender_political_progressive), the user's comments from the family's subreddits are also put into that group, ignoring flair and score.
+User overrides: the sheet user_group_overrides in grouped_flairs.xlsx (written by ../5-overlap-audit/apply_decisions.py) bars single users from the other groups of their family (age, gender, political, gender_political). If the decided group lies outside the family (diverse users go to gender_political_progressive), the user's comments from the family's subreddits are also put into that group, ignoring flair and score.
 
 Log the time it takes and output it along with the statistics.
 
