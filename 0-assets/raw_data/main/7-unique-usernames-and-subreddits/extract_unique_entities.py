@@ -14,6 +14,11 @@ INPUT_DIRECTORIES = (
 INPUT_FILES = (
     MAIN_DIRECTORY / "6-baseline-reduction" / "reduced_baseline.jsonl",
 )
+# Unreduced baselines; replaced by the reduced baseline above.
+EXCLUDED_FILES = (
+    MAIN_DIRECTORY / "3a-grouping" / "grouped_subreddit_data" / "baseline.jsonl",
+    MAIN_DIRECTORY / "4-cross-subreddit-data" / "cross_subreddit_data" / "baseline.jsonl",
+)
 BATCH_LINES = 50_000
 PROGRESS_LINES = 5_000_000
 
@@ -151,7 +156,7 @@ def main() -> None:
         path
         for directory in INPUT_DIRECTORIES
         for path in directory.rglob("*.jsonl")
-        if path.is_file()
+        if path.is_file() and path not in EXCLUDED_FILES
     } | set(INPUT_FILES))
     missing_files = [path for path in files if not path.is_file()]
     if missing_files:
