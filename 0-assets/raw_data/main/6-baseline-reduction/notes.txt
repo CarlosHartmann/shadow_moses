@@ -2,3 +2,7 @@ With the script in this directory, a more sensible baseline is created as curren
 This should be done at random but using a seed so that the results are reproducible.
 The baseline should contain exactly 1M comments.
 Let the script report its progress to console.
+
+Only comments from subreddits that are already indexed are sampled: the list in ../7-unique-usernames-and-subreddits/indexed_subreddits.txt (handed off to the indexing process on 2026-10-16; matched case-insensitively). This way, a new sample (after a change upstream) adds no subreddits that would still have to be indexed. The list is kept with the data, so the sample stays reproducible. The script reports how many baseline comments are left out because their subreddit is not on the list.
+The sample is stratified by quarter: each quarter gets a share of the 1M proportional to its number of comments (largest remainders for rounding), drawn by seeded reservoir sampling (seed 42).
+The input baseline contains no comments without a known author ([deleted], [removed]); step 4 removes them.

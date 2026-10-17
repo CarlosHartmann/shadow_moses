@@ -9,7 +9,8 @@ from openpyxl import Workbook
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / "0-assets" / "raw_data" / "main" / "3a-grouping"
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from grouping import AGE_ANNOTATION_COLUMNS, load_relevant_flairs, update_grouped_flairs
+import grouping
+from grouping import AGE_ANNOTATION_COLUMNS, flair_admits, load_relevant_flairs, update_grouped_flairs
 
 
 def make_workbook(path: Path) -> None:
@@ -23,6 +24,9 @@ def make_workbook(path: Path) -> None:
     sheet.append(["askmen", "old", None, None, None, None, None, "old"])
     sheet.append(["askmen", "blank"])
     sheet.append(["askmen", "legacy", "X"])
+    generation = [None] * len(AGE_ANNOTATION_COLUMNS)
+    generation[AGE_ANNOTATION_COLUMNS.index("given_generation")] = "X"  # Generation X
+    sheet.append(["genx", "GenX", *generation])
     workbook.save(path)
 
 
@@ -33,7 +37,8 @@ class AgeRelevanceTests(unittest.TestCase):
             make_workbook(path)
             known, relevant = load_relevant_flairs(path)
         self.assertEqual(
-            relevant["age"], {("askmen", "25M"), ("askmen", "dup"), ("askmen", "old")}
+            relevant["age"],
+            {("askmen", "25M"), ("askmen", "dup"), ("askmen", "old"), ("genx", "GenX")},
         )
         self.assertIn(("askmen", "blank"), known["age"])
         self.assertIn(("askmen", "legacy"), known["age"])
@@ -66,6 +71,38 @@ class AgeRelevanceTests(unittest.TestCase):
         self.assertEqual(added["gender_male"], 1)
         self.assertIn(("askmen", "new"), known["gender_male"])
         self.assertEqual(relevant["gender_male"], {("askmen", "M")})
+
+
+JAN_2011 = 1293840000
+JAN_2013 = 1356998400
+
+
+class FlairAdmitsTests(unittest.TestCase):
+    def setUp(self):
+        self.saved = grouping.HIGH_LIKELIHOOD_SUBREDDITS
+        grouping.HIGH_LIKELIHOOD_SUBREDDITS = {"gender_male": {"mensrights"}}
+        self.relevant = {"gender_male": {("askmen", "M")}}
+
+    def tearDown(self):
+        grouping.HIGH_LIKELIHOOD_SUBREDDITS = self.saved
+
+    def admits(self, subreddit, flair, created, score):
+        comment = {"created_utc": created, "score": score}
+        return flair_admits("gender_male", comment, (subreddit, flair), self.relevant)
+
+    def test_relevant_flair_admits_at_any_date(self):
+        self.assertTrue(self.admits("askmen", "M", JAN_2013, 1))
+        self.assertTrue(self.admits("askmen", "M", JAN_2011, 1))
+
+    def test_unflaired_comment_from_mixed_subreddit_before_2012_is_not_admitted(self):
+        self.assertFalse(self.admits("askmen", "", JAN_2011, 50))
+
+    def test_high_likelihood_subreddit_before_2012_needs_score_of_five(self):
+        self.assertTrue(self.admits("mensrights", "", JAN_2011, 5))
+        self.assertFalse(self.admits("mensrights", "", JAN_2011, 4))
+
+    def test_high_likelihood_subreddit_has_no_effect_from_2012_on(self):
+        self.assertFalse(self.admits("mensrights", "", JAN_2013, 50))
 
 
 if __name__ == "__main__":

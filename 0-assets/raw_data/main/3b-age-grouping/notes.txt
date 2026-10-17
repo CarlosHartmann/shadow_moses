@@ -1,24 +1,25 @@
 This step turns the flair-based age information into birth years and splits the age data into groups.
-The input is ../3a-grouping/grouped_subreddit_data/age.jsonl: every age comment from step 3a, i.e. comments in the age subreddits whose flair is marked as processable on the "age" sheet of ../3a-grouping/grouped_flairs.xlsx (plus everything from those subreddits before January 2012, when flairs did not exist yet).
+The input is ../3a-grouping/grouped_subreddit_data/age.jsonl: every age comment from step 3a, i.e. comments in the age subreddits whose flair is marked as processable on the "age" sheet of ../3a-grouping/grouped_flairs.xlsx (before January 2012, too, only comments with such a flair; the age group has no high-likelihood subreddits, see ../3a-grouping/notes.txt).
 The age data is not split into groups in step 3a. All splitting happens here, in separate scripts, so that other groupings can be added later.
 
 Scripts, to be run in this order:
 1. deduce_birthyear.py
 2. group_by_generation.py
 3. group_by_age.py
-(2 and 3 are independent of each other.) The whole pipeline order is grouping.py (3a), deduce_birthyear.py, group_by_generation.py, group_by_age.py, and then cross_subreddit.py (step 4).
+(2 and 3 are independent of each other.) The whole pipeline order is grouping.py (3a), derive_age_decisions.py and apply_decisions.py (../5-overlap-audit), deduce_birthyear.py, group_by_generation.py, group_by_age.py, and then cross_subreddit.py (step 4).
 
 1. deduce_birthyear.py
 Adds the field "deduced_birthyear_range" to every comment of age.jsonl and writes the result to age.jsonl in this folder. The value is a list [first year, last year], or null if no birth year can be deduced.
-The birth year is deduced per comment, not per user: only the comment's own flair counts, and the year is the year of created_utc (UTC). Users are not combined across their comments.
+The birth year is deduced per comment, not per user: only the comment's own flair counts, together with the year of created_utc (UTC; see "The year Y" below). Users are not combined across their comments, except through the per-user decisions of the overlap audit (age_user_overrides).
 The comment's flair is looked up on the age sheet by subreddit (case-insensitive) and flair text. A flair can occupy several rows on the sheet; the rows are merged (the first value of each column wins, and a warning is printed if two rows disagree).
 Which annotation is used, in this order of priority:
 - given_birthyear: the range is [year, year].
 - given_birthyear_range (e.g. 1954-1965): the range as given. Reversed ranges (1981-1980) are sorted.
-- given_age: the age is taken as correct at the time of the comment. We do not know whether the birthday of that year has passed, so for age A in year Y the range is [Y-A-1, Y-A].
+- given_age: for age A in year Y the range is [Y-A-1, Y-A], since we do not know whether the birthday of that year has passed.
 - given_agerange (e.g. 30-39): the widest consistent span, [Y-39-1, Y-30].
 - given_generation: the fixed range of that generation (below), independent of the comment year.
-A flair with only given_description (old, young) gets null, and so does a comment with an empty or unannotated flair (e.g. everything from before 2012). These comments are dropped by the scripts below.
+The year Y: flairs are snapshots from the time a comment was scraped, not from the time it was posted. From January 2015 on, flairs can be assumed to have been up to date at the time of posting, so Y is the year of created_utc. Comments from before 2015 were scraped in 2015 or later; for them the flair is assumed to have been set at the time of the user's first comment in 2015, so Y is 2015. (Only the year enters the calculation, so the exact date of that first comment does not matter.)
+A flair with only given_description (old, young) gets null, and so does a comment whose flair is not annotated. These comments are dropped by the scripts below.
 Generation ranges (xennial is not standardized and is only used here, not as a group in group_by_generation.py):
 silent 1928-1945, boomer 1946-1964, X 1965-1980, millennial 1981-1996, Z 1997-2012, xennial 1975-1985.
 Values that are not numbers or ranges are ignored with a warning.

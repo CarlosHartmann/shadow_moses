@@ -8,7 +8,7 @@ SCRIPT_DIR = (
 )
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from deduce_birthyear import birth_range_for, parse_range
+from deduce_birthyear import birth_range_for, flair_year, parse_range
 
 
 class BirthRangeTests(unittest.TestCase):
@@ -36,6 +36,22 @@ class BirthRangeTests(unittest.TestCase):
 
     def test_parse_range_rejects_text(self):
         self.assertIsNone(parse_range("old"))
+
+
+class FlairYearTests(unittest.TestCase):
+    @staticmethod
+    def at(year):
+        from datetime import datetime, timezone
+
+        return {"created_utc": str(datetime(year, 6, 1, tzinfo=timezone.utc).timestamp())}
+
+    def test_flairs_before_2015_count_from_2015(self):
+        self.assertEqual(flair_year(self.at(2011)), 2015)
+        self.assertEqual(flair_year(self.at(2013)), 2015)
+
+    def test_flairs_from_2015_on_count_from_the_comment_year(self):
+        self.assertEqual(flair_year(self.at(2015)), 2015)
+        self.assertEqual(flair_year(self.at(2019)), 2019)
 
 
 if __name__ == "__main__":

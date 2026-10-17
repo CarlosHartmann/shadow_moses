@@ -1,4 +1,8 @@
-"""Create a reproducible, quarter-stratified sample of the baseline comments."""
+"""Create a reproducible, quarter-stratified sample of the baseline comments.
+
+Only comments from subreddits in the given list (by default the list already handed off to
+the indexing process) are sampled, so the sample adds no subreddits to it.
+"""
 
 from __future__ import annotations
 
@@ -19,6 +23,9 @@ DEFAULT_INPUT = (
     HERE.parent / "4-cross-subreddit-data" / "cross_subreddit_data" / "baseline.jsonl"
 )
 DEFAULT_OUTPUT = HERE / "reduced_baseline.jsonl"
+DEFAULT_SUBREDDITS = (
+    HERE.parent / "7-unique-usernames-and-subreddits" / "indexed_subreddits.txt"
+)
 DEFAULT_SAMPLE_SIZE = 1_000_000
 DEFAULT_SEED = 42
 PROGRESS_CHECK_EVERY_LINES = 100_000
@@ -41,7 +48,16 @@ def report_progress(
     return next_percent
 
 
-def comment_quarter(line: str, line_number: int) -> str | None:
+def load_subreddits(path: Path) -> frozenset[str]:
+    return frozenset(
+        line.strip().casefold()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    )
+
+
+def comment_quarter(line: str, line_number: int, subreddits: frozenset[str]) -> str | None:
+    """Quarter of a comment that may be sampled; None for blank lines and other subreddits."""
     if not line.strip():
         return None
     try:
@@ -50,6 +66,8 @@ def comment_quarter(line: str, line_number: int) -> str | None:
         raise ValueError(f"Invalid JSON on line {line_number}: {error}") from error
     if not isinstance(comment, dict):
         raise ValueError(f"Expected a JSON object on line {line_number}.")
+    if str(comment.get("subreddit") or "").casefold() not in subreddits:
+        return None
     try:
         timestamp = float(comment["created_utc"])
         created_at = datetime.fromtimestamp(timestamp, tz=timezone.utc)
@@ -61,23 +79,27 @@ def comment_quarter(line: str, line_number: int) -> str | None:
     return f"{created_at.year}-Q{quarter}"
 
 
-def count_by_quarter(input_path: Path) -> dict[str, int]:
+def count_by_quarter(input_path: Path, subreddits: frozenset[str]) -> dict[str, int]:
     counts: dict[str, int] = defaultdict(int)
     input_size = input_path.stat().st_size
     started_at = time.monotonic()
     next_percent = 10
     print("Pass 1/3: counting comments by quarter.", flush=True)
+    skipped = 0
     with input_path.open("r", encoding="utf-8") as input_file:
         for line_number, line in enumerate(input_file, start=1):
-            quarter = comment_quarter(line, line_number)
+            quarter = comment_quarter(line, line_number, subreddits)
             if quarter is not None:
                 counts[quarter] += 1
+            elif line.strip():
+                skipped += 1
             if line_number % PROGRESS_CHECK_EVERY_LINES == 0:
                 next_percent = report_progress(
                     "Pass 1/3", input_file, input_size, started_at, next_percent
                 )
     print(
-        f"Pass 1/3 complete: {sum(counts.values()):,} comments "
+        f"Pass 1/3 complete: {sum(counts.values()):,} comments to sample from, "
+        f"{skipped:,} from other subreddits left out, "
         f"in {time.monotonic() - started_at:.1f}s.",
         flush=True,
     )
@@ -110,6 +132,7 @@ def select_line_numbers(
     counts: dict[str, int],
     quotas: dict[str, int],
     seed: int,
+    subreddits: frozenset[str],
 ) -> list[int]:
     rng = random.Random(seed)
     reservoirs: dict[str, list[int]] = {quarter: [] for quarter in counts}
@@ -122,7 +145,7 @@ def select_line_numbers(
 
     with input_path.open("r", encoding="utf-8") as input_file:
         for line_number, line in enumerate(input_file, start=1):
-            quarter = comment_quarter(line, line_number)
+            quarter = comment_quarter(line, line_number, subreddits)
             if quarter is None:
                 continue
             second_pass_counts[quarter] += 1
@@ -215,6 +238,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--sample-size", type=int, default=DEFAULT_SAMPLE_SIZE)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    parser.add_argument(
+        "--subreddits",
+        type=Path,
+        default=DEFAULT_SUBREDDITS,
+        help="Only comments from the subreddits in this list (one per line) are sampled.",
+    )
     return parser.parse_args()
 
 
@@ -230,11 +259,13 @@ def main() -> int:
         return 2
 
     try:
-        counts = count_by_quarter(input_path)
+        subreddits = load_subreddits(args.subreddits)
+        print(f"Sampling from {len(subreddits):,} subreddits listed in {args.subreddits}.", flush=True)
+        counts = count_by_quarter(input_path, subreddits)
         if not counts:
             raise ValueError("The input contains no comments.")
         quotas = allocate_quotas(counts, args.sample_size)
-        selected_lines = select_line_numbers(input_path, counts, quotas, args.seed)
+        selected_lines = select_line_numbers(input_path, counts, quotas, args.seed, subreddits)
         write_sample(input_path, output_path, selected_lines)
     except (OSError, ValueError) as error:
         print(error, file=sys.stderr)
@@ -242,7 +273,7 @@ def main() -> int:
 
     print(
         f"Wrote {len(selected_lines):,} comments to {output_path} "
-        f"(seed={args.seed}, quarters={len(quotas)})."
+        f"(seed={args.seed}, quarters={len(quotas)}, subreddits={args.subreddits.name})."
     )
     return 0
 

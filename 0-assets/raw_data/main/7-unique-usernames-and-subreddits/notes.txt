@@ -1,0 +1,18 @@
+This step lists all unique subreddits and usernames in the finalised, study-relevant datasets.
+The subreddit list is handed to a separate indexing process so that comment contexts can be found quickly. The username list is used to pull the users' full histories, to find more information about their gender and native-speaker status.
+
+Input (only the finalised datasets, nothing intermediate):
+- the original group comments: ../3a-grouping/grouped_subreddit_data/<group>.jsonl for gender_male, gender_female, political_conservative, political_progressive, gender_political_conservative and gender_political_progressive
+- the original age group comments: ../3b-age-grouping/age_<group>.jsonl for silent, boomer, X, millennial, Z, young and old
+- the cross-subreddit comments: ../4-cross-subreddit-data/cross_subreddit_data/<group>.jsonl for all of the groups above
+- the reduced baseline: ../6-baseline-reduction/reduced_baseline.jsonl
+Not used: the age.jsonl files of 3a and 3b (they contain comments that are in no age group) and the unreduced baselines.
+
+Output:
+- unique_usernames.txt: one username per line. Authors "[deleted]" and "[removed]" are left out.
+- unique_subreddits.txt: one subreddit per line, case-insensitively unique.
+- subreddits_not_yet_indexed.txt: the subreddits that are not in indexed_subreddits.txt, i.e. those still to be indexed. indexed_subreddits.txt is a copy of the list that was handed off to the indexing process (unique_subreddits.txt as of 2026-10-16); update it whenever a new list is handed off.
+
+The script keeps its progress in .progress.sqlite3 so that an interrupted run can resume. If any input changed, or the input set is different, the progress is discarded and the run starts from scratch.
+
+The input files are streamed and never loaded into memory as a whole.

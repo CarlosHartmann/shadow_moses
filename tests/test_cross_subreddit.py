@@ -73,6 +73,8 @@ class CrossSubredditTests(unittest.TestCase):
                     make_comment("baseline-extra", "ALICE", "outside_subreddits"),
                     make_comment("pre-only-baseline", "PreOnly", "outside_subreddits"),
                     make_comment("unrelated", "Carol", "outside_subreddits"),
+                    make_comment("deleted-author", "[deleted]", "outside_subreddits"),
+                    make_comment("removed-author", "[removed]", "outside_subreddits"),
                 ],
             )
             filtered_path = root / "filtered.jsonl"
@@ -165,6 +167,41 @@ class CrossSubredditTests(unittest.TestCase):
                 ],
                 1,
             )
+
+
+    def test_original_comments_join_the_authors_other_groups_within_family_limits(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            grouped_dir = root / "grouped"
+            age_dir = root / "age"
+            output_dir = root / "output"
+            grouped_dir.mkdir()
+            age_dir.mkdir()
+            male = make_comment("bob-male", "Bob", "askmen")
+            aged = make_comment("bob-aged", "Bob", "teenagers")
+            # In age_young only: its own birth year lies outside every generation.
+            young_only = make_comment("bob-young-only", "Bob", "teenagers")
+            for group in GROUPS:
+                write_jsonl(group_path(group, grouped_dir, age_dir), [])
+            write_jsonl(grouped_dir / "gender_male.jsonl", [male])
+            write_jsonl(age_dir / "age_millennial.jsonl", [aged])
+            write_jsonl(age_dir / "age_young.jsonl", [aged, young_only])
+            baseline_path = root / "baseline.jsonl"
+            write_jsonl(baseline_path, [])
+            filtered_path = root / "filtered.jsonl"
+            write_jsonl(filtered_path, [male, aged, young_only])
+
+            process_cross_subreddit_data(
+                baseline_path, grouped_dir, filtered_path, output_dir, age_dir
+            )
+
+            def ids(group: str) -> list[str]:
+                with (output_dir / f"{group}.jsonl").open(encoding="utf-8") as group_file:
+                    return [json.loads(line)["id"] for line in group_file]
+
+            self.assertEqual(ids("gender_male"), ["bob-aged", "bob-young-only"])
+            self.assertEqual(ids("age_young"), ["bob-male"])
+            self.assertEqual(ids("age_millennial"), ["bob-male"])
 
 
 if __name__ == "__main__":

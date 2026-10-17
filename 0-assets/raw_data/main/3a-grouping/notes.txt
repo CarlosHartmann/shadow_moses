@@ -17,7 +17,7 @@ The age group is one group (not split into young and old here; that happens in .
 
 gender_male, gender_female:
 Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
-gender_female stands for cis women; flairs of trans men (FTM as an umbrella term) are in it too, and also on the gender_political_progressive sheet. Trans women and non-binary flairs are annotated on the gender_political_progressive sheet instead (their subreddits are in subreddit_lists/gender_political_progressive.txt, and the score filter below applies).
+gender_female stands for everyone socialized as female: cis women, trans men (FTM as an umbrella term) and non-binary people assigned female at birth (e.g. "AFAB genderqueer", "NB on T", "transmasc non-binary"); their flairs are also on the gender_political_progressive sheet. Flairs that only mention testosterone (e.g. "19 | T 2/15/17") count as well. gender_male stands for cis men only. Trans women, and non-binary, genderqueer, agender or genderfluid flairs without a sign of being assigned female at birth, belong to neither gender group; they are annotated on the gender_political_progressive sheet instead (their subreddits are in subreddit_lists/gender_political_progressive.txt, and the score filter below applies).
 
 political_conservative, political_progressive, gender_political_conservative, gender_political_progressive:
 Only include comments with score at or above 5.
@@ -27,9 +27,12 @@ Only include comments if their flair is marked as relevant in grouped_flairs.xls
 
 baseline: anything not included in any of the other subreddits (comments that are from these subreddits but fail an additional condition like the score-based one, should not be included in the baseline either)
 
-As flairs were only introduced in January 2012, any grouping involving flairs are only to be followed for January 2012 and onwards. Before that, consider everything from the respective subreddit.
+Before January 2012 (flairs were introduced then):
+- A comment with a relevant flair counts as from 2012 on. Flairs seen on older comments were set later (they show the flair at the time the comment was scraped, which only happened from about 2015 on), but they are still informative.
+- In addition, a comment from one of the group's high-likelihood subreddits counts without a relevant flair if its score is 5 or more. These are the subreddits most of whose commenters can be expected to belong to the group; they are listed in subreddit_lists/high_likelihood/<group>.txt (a subset of the group's list). Comments from all other listed subreddits need a relevant flair, because those subreddits are mixed (e.g. progressive users commenting on a conservative subreddit), so including everything from them would put the same comment into opposing groups.
+- The age group has no high-likelihood list: before 2012 it only takes comments with a relevant flair.
 
-Empty flairs are not considered relevant under the rules for grouped_flairs.xlsx (unless the comments are from before January 2012, see prior rule) and should therefore be filtered out.
+Empty flairs are not considered relevant under the rules for grouped_flairs.xlsx and are filtered out (before 2012 a comment without a flair can still count through a high-likelihood subreddit, see above).
 
 Output statistics how many comments there are per group by every quartal (three-month period) in the data.
 The count starts with 2010, not earlier.
@@ -37,7 +40,9 @@ The age group is left out of these statistics; the group_by scripts in ../3b-age
 
 Ensure you don't load the entire dataset into memory at once.
 
-User overrides: the sheet user_group_overrides in grouped_flairs.xlsx (written by ../5-overlap-audit/apply_decisions.py) bars single users from the other groups of their family (age, gender, political, gender_political). If the decided group lies outside the family (diverse users go to gender_political_progressive), the user's comments from the family's subreddits are also put into that group, ignoring flair and score.
+User overrides: the sheet user_group_overrides in grouped_flairs.xlsx (written by ../5-overlap-audit/apply_decisions.py) bars single users from the other groups of their family (age, gender, political, gender_political). If the decided group lies outside the family (diverse users go to gender_political_progressive), the user's comments from the family's subreddits (e.g. those in subreddit_lists/gender_male.txt and gender_female.txt) are also put into that group, ignoring flair and score. Their comments from the decided group's own subreddits follow the normal rules.
+
+Comments without a known author ([deleted], [removed]) are put into no group, because they cannot be balanced per user (in practice this only concerns comments from high-likelihood subreddits before 2012, since all other group comments need a flair).
 
 Log the time it takes and output it along with the statistics.
 

@@ -43,6 +43,15 @@ GROUPS = (
     "gender_political_progressive",
 )
 STATISTICS_GROUPS = ("baseline", *GROUPS)
+# Groups that exclude each other. A comment already in one group of a family is not added to
+# another group of that family; e.g. an age comment keeps the age groups of its own birth year.
+FAMILIES = (
+    AGE_GROUPS,
+    ("gender_male", "gender_female"),
+    ("political_conservative", "political_progressive"),
+    ("gender_political_conservative", "gender_political_progressive"),
+)
+FAMILY_OF = {group: family for family in FAMILIES for group in family}
 
 
 def iter_comments(path: Path) -> Iterator[tuple[int, str, dict]]:
@@ -104,13 +113,13 @@ def load_grouped_users_and_ids(
     age_dir: Path,
 ) -> tuple[
     dict[str, set[str]],
-    set[str],
+    dict[str, set[str]],
     defaultdict[str, defaultdict[str, int]],
     defaultdict[str, defaultdict[str, set[str]]],
     str | None,
 ]:
     groups_by_author: dict[str, set[str]] = defaultdict(set)
-    original_ids: set[str] = set()
+    original_ids: dict[str, set[str]] = defaultdict(set)
     counts: defaultdict[str, defaultdict[str, int]] = defaultdict(
         lambda: defaultdict(int)
     )
@@ -126,7 +135,7 @@ def load_grouped_users_and_ids(
             author = author_key(comment)
             if author and float(comment["created_utc"]) >= AUTHOR_SELECTION_START:
                 groups_by_author[author].add(group)
-            original_ids.add(comment_id(comment, line_number, path))
+            original_ids[comment_id(comment, line_number, path)].add(group)
             if int(quarter[:4]) >= STATISTICS_START_YEAR:
                 counts[quarter][group] += 1
                 if author:
@@ -277,6 +286,7 @@ def process_cross_subreddit_data(
     baseline_removed = 0
     filtered_comments = 0
     cross_comment_ids: set[str] = set()
+    originals_added = 0
     cross_group_counts = defaultdict(int)
 
     try:
@@ -292,7 +302,8 @@ def process_cross_subreddit_data(
             for line_number, line, comment in iter_comments(baseline_path):
                 baseline_comments += 1
                 author = author_key(comment)
-                if author in groups_by_author or author in (excluded_authors or ()):
+                # Comments without a known author ([deleted], [removed]) cannot be balanced per user.
+                if not author or author in groups_by_author or author in (excluded_authors or ()):
                     baseline_removed += 1
                     continue
                 baseline_output.write(line)
@@ -311,22 +322,34 @@ def process_cross_subreddit_data(
                 if not groups:
                     continue
                 identifier = comment_id(comment, line_number, filtered_path)
-                if identifier in original_ids or identifier in cross_comment_ids:
+                if identifier in cross_comment_ids:
                     continue
+                original_groups = original_ids.get(identifier)
+                if original_groups is not None:
+                    # An original comment also goes to the author's other groups, unless it is
+                    # already in a group of the same family. It is counted once in the overlap
+                    # statistics already, as an original comment.
+                    taken = {g for group in original_groups for g in FAMILY_OF[group]}
+                    targets = {group for group in groups if group not in taken}
+                    if not targets:
+                        continue
+                    originals_added += 1
+                else:
+                    targets = groups
                 cross_comment_ids.add(identifier)
                 quarter = quarter_for(comment, line_number, filtered_path)
                 if int(quarter[:4]) >= STATISTICS_START_YEAR:
                     if last_quarter is None or quarter > last_quarter:
                         last_quarter = quarter
-                    for group in groups:
+                    for group in targets:
                         if author:
                             distinct_users[quarter][group].add(author)
                     overlap = overlap_group_name(groups)
-                    if overlap:
+                    if overlap and original_groups is None:
                         overlap_comment_counts[quarter][overlap] += 1
                         overlap_distinct_users[quarter][overlap].add(author)
                 for group in GROUPS:
-                    if group not in groups:
+                    if group not in targets:
                         continue
                     group_outputs[group].write(line)
                     cross_group_counts[group] += 1
@@ -359,6 +382,7 @@ def process_cross_subreddit_data(
         ("baseline comments moved", f"{baseline_removed:,}"),
         ("filtered comments processed", f"{filtered_comments:,}"),
         ("new unique comments", f"{len(cross_comment_ids):,}"),
+        ("of which original in another group", f"{originals_added:,}"),
         ("total runtime", f"{total_seconds:.2f} seconds"),
     ]
     write_statistics(

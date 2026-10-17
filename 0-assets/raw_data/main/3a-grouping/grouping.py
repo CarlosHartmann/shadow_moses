@@ -36,6 +36,7 @@ AGE_ANNOTATION_COLUMNS = (
     "given_description",
 )
 LEGACY_RELEVANT_MARKER = "X"
+UNKNOWN_AUTHORS = {"", "[deleted]", "[removed]"}
 USER_OVERRIDE_SHEET = "user_group_overrides"
 # Users with an override keep only the decided group of the family ("none" keeps neither).
 # A decided group outside the family (e.g. gender_political_progressive) also takes the user's
@@ -55,7 +56,7 @@ GROUP_ORDER = (
     "gender_political_conservative",
     "gender_political_progressive",
 )
-# Every group follows grouped_flairs.xlsx for comments from January 2012 onward.
+# Every group follows grouped_flairs.xlsx (see flair_admits for comments before 2012).
 FLAIR_RELEVANCE_GROUPS = frozenset(
     {
         AGE_GROUP,
@@ -69,20 +70,32 @@ FLAIR_RELEVANCE_GROUPS = frozenset(
 )
 
 
+def read_subreddit_list(path: Path) -> set[str]:
+    """One subreddit per line, case-insensitive; blank lines and # comments are skipped."""
+    if not path.exists():
+        return set()
+    return {
+        line.strip().casefold()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+
+
 def load_group_subreddits(directory: Path) -> dict[str, set[str]]:
-    """Read one lowercase subreddit per line from <group>.txt files."""
-    groups = {}
-    for name in GROUP_ORDER:
-        path = directory / f"{name}.txt"
-        groups[name] = {
-            line.strip().casefold()
-            for line in path.read_text(encoding="utf-8").splitlines()
-            if line.strip() and not line.lstrip().startswith("#")
-        }
-    return groups
+    """Read the subreddits of each group from <group>.txt files."""
+    return {name: read_subreddit_list(directory / f"{name}.txt") for name in GROUP_ORDER}
 
 
 GROUP_SUBREDDITS = load_group_subreddits(SUBREDDIT_LISTS_DIR)
+# Before 2012, comments from these subreddits count for the group without a relevant flair
+# (score of 5 or more). A group without a list (e.g. age) only takes relevant flairs then.
+HIGH_LIKELIHOOD_SUBREDDITS = load_group_subreddits(SUBREDDIT_LISTS_DIR / "high_likelihood")
+for _group, _subreddits in HIGH_LIKELIHOOD_SUBREDDITS.items():
+    if not _subreddits <= GROUP_SUBREDDITS[_group]:
+        raise ValueError(
+            f"high_likelihood/{_group}.txt lists subreddits missing from {_group}.txt: "
+            + ", ".join(sorted(_subreddits - GROUP_SUBREDDITS[_group]))
+        )
 SCORE_FILTERED_GROUPS = {
     "political_conservative",
     "political_progressive",
@@ -120,6 +133,13 @@ def quarter_for(comment: dict, line_number: int) -> str:
     return f"{created_at.year}-Q{quarter}"
 
 
+def score_qualifies(comment: dict) -> bool:
+    try:
+        return float(comment.get("score", 0)) >= 5
+    except (TypeError, ValueError):
+        return False
+
+
 def matching_groups(comment: dict) -> list[str]:
     subreddit = str(comment.get("subreddit", "")).casefold()
     groups = [
@@ -127,16 +147,33 @@ def matching_groups(comment: dict) -> list[str]:
         for group, subreddits in GROUP_SUBREDDITS.items()
         if subreddit in subreddits
     ]
-
-    try:
-        score_qualifies = float(comment.get("score", 0)) >= 5
-    except (TypeError, ValueError):
-        score_qualifies = False
+    qualifies = score_qualifies(comment)
     return [
         group
         for group in groups
-        if group not in SCORE_FILTERED_GROUPS or score_qualifies
+        if group not in SCORE_FILTERED_GROUPS or qualifies
     ]
+
+
+def flair_admits(
+    group: str,
+    comment: dict,
+    pair: tuple[str, str],
+    relevant_flairs: dict[str, set[tuple[str, str]]],
+) -> bool:
+    """Whether a comment of the group's subreddits counts for the group (score filter aside).
+
+    From 2012 on, only a relevant flair admits it. Before 2012 a relevant flair admits it as
+    well (flairs seen on older comments were set later but are still informative), and so does
+    a high-likelihood subreddit of the group if the comment has a score of 5 or more.
+    """
+    if pair[1] and pair in relevant_flairs[group]:
+        return True
+    return (
+        float(comment["created_utc"]) < FLAIR_START
+        and pair[0] in HIGH_LIKELIHOOD_SUBREDDITS[group]
+        and score_qualifies(comment)
+    )
 
 
 def excel_value(value):
@@ -230,9 +267,13 @@ def load_relevant_flairs(
                 pair = (str(row[0] or ""), str(row[1] or ""))
                 known[group].add(pair)
                 # A flair can occupy several rows; any annotated row makes it relevant.
+                # In given_generation, "X" is Generation X, not the legacy marker.
                 if any(
                     str(row[index] or "").strip()
-                    and str(row[index]).strip().upper() != LEGACY_RELEVANT_MARKER
+                    and (
+                        header[index] == "given_generation"
+                        or str(row[index]).strip().upper() != LEGACY_RELEVANT_MARKER
+                    )
                     for index in columns
                 ):
                     relevant[group].add(pair)
@@ -291,9 +332,9 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
     flair_annotations = load_relevant_flairs(HERE / GROUPED_FLAIRS_NAME)
     if flair_annotations is None:
         print(f"No {GROUPED_FLAIRS_NAME} yet; flair relevance is not applied.", flush=True)
-        known_flairs = relevant_flairs = None
+        relevant_flairs = None
     else:
-        known_flairs, relevant_flairs = flair_annotations
+        _, relevant_flairs = flair_annotations
     try:
         with ExitStack() as stack:
             baseline_file = stack.enter_context(baseline_path.open("w", encoding="utf-8"))
@@ -309,32 +350,27 @@ def group_comments(input_path: Path, output_dir: Path) -> None:
                 author = str(comment.get("author") or "").casefold()
                 subreddit = str(comment.get("subreddit", "")).casefold()
                 groups = matching_groups(comment)
-                forced_groups = user_inclusions.get(author, {})
-                for forced_group, replaced in forced_groups.items():
-                    # Ignores flair and score: the user's comments where they would have been in the replaced groups.
-                    if forced_group not in groups and any(
-                        subreddit in GROUP_SUBREDDITS[name]
-                        for name in (*replaced, forced_group)
-                    ):
-                        groups.append(forced_group)
+                # Ignoring flair and score, but only for the user's comments from the subreddits of
+                # the replaced family, i.e. where they would have been in the replaced groups.
+                forced_groups = {
+                    forced_group
+                    for forced_group, replaced in user_inclusions.get(author, {}).items()
+                    if any(subreddit in GROUP_SUBREDDITS[name] for name in replaced)
+                }
+                groups.extend(sorted(forced_groups - set(groups)))
                 for group in groups:
                     pair = (subreddit, flair_of(comment))
                     if subreddit in GROUP_SUBREDDITS[group]:
                         flair_combos[group].add(pair)
-                    if group in user_exclusions.get(author, ()):
+                    # Comments without a known author cannot be balanced per user.
+                    if author in UNKNOWN_AUTHORS or group in user_exclusions.get(author, ()):
                         continue
                     forced = group in forced_groups
                     if (
                         not forced
-                        and known_flairs is not None
                         and relevant_flairs is not None
                         and group in FLAIR_RELEVANCE_GROUPS
-                        and float(comment["created_utc"]) >= FLAIR_START
-                        and (
-                            not pair[1]
-                            or pair not in known_flairs[group]
-                            or pair not in relevant_flairs[group]
-                        )
+                        and not flair_admits(group, comment, pair, relevant_flairs)
                     ):
                         continue
                     spill_files[group].write(line)

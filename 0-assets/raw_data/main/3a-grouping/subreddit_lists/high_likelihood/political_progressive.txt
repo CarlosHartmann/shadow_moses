@@ -1,0 +1,7 @@
+# Subreddits whose comments before 2012 count for this group without a relevant flair
+# (score of 5 or more), because most of their commenters can be expected to belong to it.
+# Must be a subset of ../political_progressive.txt. From 2012 on, this list has no effect.
+# politics is left out: a general news subreddit, not a progressive community.
+liberal
+progressive
+socialism

@@ -1,0 +1,4 @@
+# Subreddits whose comments before 2012 count for this group without a relevant flair
+# (score of 5 or more), because most of their commenters can be expected to belong to it.
+# Must be a subset of ../gender_political_conservative.txt. From 2012 on, this list has no effect.
+# None of the listed subreddits with comments before 2012 is mainly gender-politically conservative.

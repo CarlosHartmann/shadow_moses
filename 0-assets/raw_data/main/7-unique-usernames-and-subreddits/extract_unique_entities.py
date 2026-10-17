@@ -6,19 +6,32 @@ from pathlib import Path
 
 MAIN_DIRECTORY = Path(__file__).resolve().parent.parent
 OUTPUT_DIRECTORY = MAIN_DIRECTORY / "7-unique-usernames-and-subreddits"
-INPUT_DIRECTORIES = (
-    MAIN_DIRECTORY / "3a-grouping" / "grouped_subreddit_data",
-    MAIN_DIRECTORY / "3b-age-grouping",
-    MAIN_DIRECTORY / "4-cross-subreddit-data" / "cross_subreddit_data",
+AGE_GROUPS = ("age_silent", "age_boomer", "age_X", "age_millennial", "age_Z", "age_young", "age_old")
+OTHER_GROUPS = (
+    "gender_male",
+    "gender_female",
+    "political_conservative",
+    "political_progressive",
+    "gender_political_conservative",
+    "gender_political_progressive",
 )
+# Only the finalised study datasets: original group comments (3a, age groups from 3b),
+# cross-subreddit comments (4) and the reduced baseline (6). Intermediate files such as
+# the age.jsonl files and the unreduced baselines are not used.
 INPUT_FILES = (
+    *(MAIN_DIRECTORY / "3a-grouping" / "grouped_subreddit_data" / f"{g}.jsonl" for g in OTHER_GROUPS),
+    *(MAIN_DIRECTORY / "3b-age-grouping" / f"{g}.jsonl" for g in AGE_GROUPS),
+    *(
+        MAIN_DIRECTORY / "4-cross-subreddit-data" / "cross_subreddit_data" / f"{g}.jsonl"
+        for g in (*AGE_GROUPS, *OTHER_GROUPS)
+    ),
     MAIN_DIRECTORY / "6-baseline-reduction" / "reduced_baseline.jsonl",
 )
-# Unreduced baselines; replaced by the reduced baseline above.
-EXCLUDED_FILES = (
-    MAIN_DIRECTORY / "3a-grouping" / "grouped_subreddit_data" / "baseline.jsonl",
-    MAIN_DIRECTORY / "4-cross-subreddit-data" / "cross_subreddit_data" / "baseline.jsonl",
-)
+UNKNOWN_AUTHORS = {"[deleted]", "[removed]"}
+# The subreddit list already handed off to the indexing process (a copy of an earlier
+# unique_subreddits.txt); subreddits missing from it are listed separately.
+INDEXED_SUBREDDITS_NAME = "indexed_subreddits.txt"
+ADDED_SUBREDDITS_NAME = "subreddits_not_yet_indexed.txt"
 BATCH_LINES = 50_000
 PROGRESS_LINES = 5_000_000
 
@@ -26,6 +39,33 @@ PROGRESS_LINES = 5_000_000
 def collect_unique_values(files: list[Path], output_directory: Path) -> None:
     output_directory.mkdir(parents=True, exist_ok=True)
     database_path = output_directory / ".progress.sqlite3"
+
+    # Resume only if the saved run used exactly these inputs, unchanged; otherwise values
+    # from files that are no longer inputs would survive in the database.
+    signatures = {
+        path.relative_to(MAIN_DIRECTORY).as_posix(): (path.stat().st_size, path.stat().st_mtime_ns)
+        for path in files
+    }
+    if database_path.exists():
+        with sqlite3.connect(database_path) as database:
+            try:
+                saved = {
+                    path: (size, modified)
+                    for path, size, modified in database.execute(
+                        "SELECT path, size, modified_ns FROM processed_files"
+                    )
+                }
+            except sqlite3.OperationalError:
+                saved = None
+        database.close()
+        if saved is None or any(signatures.get(path) != signature for path, signature in saved.items()):
+            print("Inputs changed since the saved run; rebuilding from scratch.", flush=True)
+            database_path.unlink()
+
+    indexed_path = output_directory / INDEXED_SUBREDDITS_NAME
+    indexed_subreddits = (
+        set(indexed_path.read_text(encoding="utf-8").splitlines()) if indexed_path.exists() else None
+    )
 
     with sqlite3.connect(database_path) as database:
         database.execute("PRAGMA synchronous = NORMAL")
@@ -49,8 +89,7 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
 
         for file_number, path in enumerate(files, start=1):
             relative_path = path.relative_to(MAIN_DIRECTORY).as_posix()
-            stat = path.stat()
-            signature = (stat.st_size, stat.st_mtime_ns)
+            signature = signatures[relative_path]
             previous = database.execute(
                 "SELECT size, modified_ns FROM processed_files WHERE path = ?",
                 (relative_path,),
@@ -61,11 +100,7 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
                     flush=True,
                 )
                 continue
-            if previous is not None:
-                raise RuntimeError(
-                    f"Input changed since the saved run: {relative_path}. "
-                    f"Remove {database_path} to rebuild from scratch."
-                )
+            stat = path.stat()
 
             print(
                 f"File {file_number}/{len(files)}: processing {relative_path} "
@@ -87,7 +122,7 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
                         continue
 
                     author = record.get("author")
-                    if isinstance(author, str) and author.strip() and author != "[deleted]":
+                    if isinstance(author, str) and author.strip() and author not in UNKNOWN_AUTHORS:
                         database.execute(
                             "INSERT OR IGNORE INTO usernames(value) VALUES (?)",
                             (author,),
@@ -121,6 +156,7 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
                 flush=True,
             )
 
+        database.execute("DROP TABLE IF EXISTS normalized_subreddits")
         database.execute(
             "CREATE TABLE normalized_subreddits (value TEXT PRIMARY KEY) WITHOUT ROWID"
         )
@@ -150,14 +186,25 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
             count = database.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
             print(f"Wrote {count:,} unique values to {destination}", flush=True)
 
+        # Subreddits not indexed yet, so that only those have to be indexed in addition.
+        if indexed_subreddits is not None:
+            known = {value.casefold() for value in indexed_subreddits}
+            added = [
+                value
+                for (value,) in database.execute("SELECT value FROM subreddits ORDER BY value")
+                if value.casefold() not in known
+            ]
+            (output_directory / ADDED_SUBREDDITS_NAME).write_text(
+                "".join(f"{value}\n" for value in added), encoding="utf-8"
+            )
+            print(
+                f"{len(added):,} subreddits not in {INDEXED_SUBREDDITS_NAME} -> {ADDED_SUBREDDITS_NAME}",
+                flush=True,
+            )
+
 
 def main() -> None:
-    files = sorted({
-        path
-        for directory in INPUT_DIRECTORIES
-        for path in directory.rglob("*.jsonl")
-        if path.is_file() and path not in EXCLUDED_FILES
-    } | set(INPUT_FILES))
+    files = sorted(INPUT_FILES)
     missing_files = [path for path in files if not path.is_file()]
     if missing_files:
         raise FileNotFoundError(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,12 +15,21 @@ from openpyxl import load_workbook
 
 HERE = Path(__file__).resolve().parent
 GROUPING_DIR = HERE.parent / "3a-grouping"
+sys.path.insert(0, str(GROUPING_DIR))
+
+# The same flair normalisation as 3a, so that every flair 3a found relevant is found here too.
+from grouping import flair_of  # noqa: E402
+
 GROUPED_FLAIRS_PATH = GROUPING_DIR / "grouped_flairs.xlsx"
 SHEET_NAME = "age"
 OVERRIDE_SHEET = "age_user_overrides"
 DEFAULT_INPUT = GROUPING_DIR / "grouped_subreddit_data" / "age.jsonl"
 DEFAULT_OUTPUT = HERE / "age.jsonl"
 OUTPUT_FIELD = "deduced_birthyear_range"
+# Flairs on comments from before 2015 were scraped in 2015 or later and show the flair of that
+# time; such a flair is taken to have been set at the user's first comment in 2015. From 2015 on,
+# flairs are taken to be up to date at the time of posting.
+FLAIRS_UP_TO_DATE_FROM = 2015
 
 # xennial is not standardized; the other ranges follow Pew-style definitions.
 GENERATION_RANGES = {
@@ -120,8 +130,10 @@ def load_user_overrides(path: Path) -> dict[str, tuple[int, int]]:
     return overrides
 
 
-def comment_year(comment: dict) -> int:
-    return datetime.fromtimestamp(float(comment["created_utc"]), tz=timezone.utc).year
+def flair_year(comment: dict) -> int:
+    """The year in which the comment's flair is taken to state the user's age."""
+    year = datetime.fromtimestamp(float(comment["created_utc"]), tz=timezone.utc).year
+    return max(year, FLAIRS_UP_TO_DATE_FROM)
 
 
 def annotate_file(
@@ -139,12 +151,9 @@ def annotate_file(
             if not line.strip():
                 continue
             comment = json.loads(line)
-            key = (
-                str(comment.get("subreddit", "")).casefold(),
-                str(comment.get("author_flair_text") or "").strip(),
-            )
+            key = (str(comment.get("subreddit", "")).casefold(), flair_of(comment))
             annotation = annotations.get(key)
-            result = birth_range_for(annotation, comment_year(comment)) if annotation else None
+            result = birth_range_for(annotation, flair_year(comment)) if annotation else None
             override = (user_overrides or {}).get(str(comment.get("author") or "").casefold())
             if override:
                 result = override
