@@ -55,6 +55,8 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
                         "SELECT path, size, modified_ns FROM processed_files"
                     )
                 }
+                # A run from before comment IDs were collected has none to resume from.
+                database.execute("SELECT 1 FROM comment_ids LIMIT 1")
             except sqlite3.OperationalError:
                 saved = None
         database.close()
@@ -77,6 +79,9 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
                 value TEXT PRIMARY KEY
             ) WITHOUT ROWID;
             CREATE TABLE IF NOT EXISTS subreddits (
+                value TEXT PRIMARY KEY
+            ) WITHOUT ROWID;
+            CREATE TABLE IF NOT EXISTS comment_ids (
                 value TEXT PRIMARY KEY
             ) WITHOUT ROWID;
             CREATE TABLE IF NOT EXISTS processed_files (
@@ -135,6 +140,18 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
                             (subreddit,),
                         )
 
+                    # The full name (t1_<id>) keeps the type prefix; records without one get it
+                    # added, since all inputs are comments.
+                    comment_id = record.get("name")
+                    if not (isinstance(comment_id, str) and comment_id.strip()):
+                        bare_id = record.get("id")
+                        comment_id = f"t1_{bare_id}" if isinstance(bare_id, str) and bare_id.strip() else None
+                    if comment_id is not None:
+                        database.execute(
+                            "INSERT OR IGNORE INTO comment_ids(value) VALUES (?)",
+                            (comment_id,),
+                        )
+
                     if line_count % BATCH_LINES == 0:
                         database.commit()
 
@@ -173,6 +190,7 @@ def collect_unique_values(files: list[Path], output_directory: Path) -> None:
         for table, filename in (
             ("usernames", "unique_usernames.txt"),
             ("subreddits", "unique_subreddits.txt"),
+            ("comment_ids", "unique_comment_ids.txt"),
         ):
             destination = output_directory / filename
             temporary = destination.with_suffix(destination.suffix + ".tmp")

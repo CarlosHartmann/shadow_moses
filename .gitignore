@@ -76,3 +76,4 @@
 __pycache__/
 *.pyc
 ~$*
+0-assets/raw_data/main/7-unique-usernames-and-subreddits/unique_comment_ids.txt
