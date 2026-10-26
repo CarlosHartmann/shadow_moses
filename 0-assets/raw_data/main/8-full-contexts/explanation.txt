@@ -1,0 +1,7 @@
+This step rebuilds the full context of every comment in the finalised datasets (the post and the surrounding comment thread), so that each comment can be read in the conversation it was written in.
+
+Contexts are found through a separate index of the subreddits. That index was built from ../7-unique-usernames-and-subreddits/unique_subreddits.txt as of 2026-10-16 (kept as indexed_subreddits.txt there). After the indexing had been set up and started, the filtering and grouping of commenters was changed again (2026-10-17). These changes added comments to the cross-subreddit data of age_X and age_old, and those comments come from six subreddits that are not in the index: ClassicMoviePosters, NichirenBuddhism, SeattleHistory, fightingillini, letters and seattlehobos (listed in ../7-unique-usernames-and-subreddits/subreddits_not_yet_indexed.txt).
+
+manual: the contexts of all comments in the finalised datasets that come from those six subreddits, fetched by hand. There are 9 such comments, one file per comment, named after the comment ID with its t1_ prefix (e.g. t1_cil1s3w.txt), as in ../7-unique-usernames-and-subreddits/unique_comment_ids.txt. Each file gives the post's subreddit, author, title and content, followed by the comment thread the comment is part of.
+
+programmatic: the same kind of context rebuilding for all other comments, done programmatically using the subreddit index.
