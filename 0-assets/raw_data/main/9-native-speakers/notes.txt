@@ -1,0 +1,96 @@
+DRAFT (2026-10-27), written before the full user histories arrived. To be revised once they are here.
+
+This step labels every user in ../7-unique-usernames-and-subreddits/unique_usernames.txt as "confirmed L1" (English is a native language), "confirmed L2" (English is not a native language) or "ambiguous". The labels are only used in the parts of the study that compare L1 and L2 use of English. No user is filtered out because of this step; ambiguous users stay in all other analyses.
+It runs in two stages:
+1. Regex rules are run over each user's full comment history and collect self-disclosures about native language, origin and residence (high recall: anything possibly relevant).
+2. A simple LLM reads each user's evidence (the regex hits and the user's flairs) and decides on the label.
+
+Definitions (decided 2026-10-27):
+- English L1 includes native speakers of English from countries where English is one of several languages (India, Nigeria, Singapore, the Philippines, South Africa etc.), as long as they say English is a native or first language of theirs.
+- Bilinguals and heritage speakers who grew up with English (e.g. in an English-speaking country with another language at home) count as English L1.
+- Coming from or living in a country with an overwhelming majority of English speakers is enough for "confirmed L1" if nothing else in the evidence points to another native language or to growing up elsewhere (e.g. no "I moved here from Poland", "English is my second language", "in my language we say"). These countries are: the US, the UK, Ireland, Australia, New Zealand and Canada outside Quebec.
+- The same works the other way: coming from a country where English is not a majority native language is enough for "confirmed L2" if nothing in the evidence points to growing up with English (e.g. English-speaking parents, growing up bilingual, moving to an English-speaking country as a child). "Coming from" means origin (C1, C2, C8, C9, C11 hits). Residence alone (C3, C6, country flairs) is not enough, since it includes expats. Origin in a country where English is one of several languages (India, Nigeria, Singapore, the Philippines, South Africa etc.) does not confirm either label by itself.
+- Users with no evidence, or with evidence that does not settle it, or with contradicting evidence, are "ambiguous".
+
+Prior work:
+- Rabinovich, Tsvetkov & Wintner (2018), "Native Language Cognate Effects on Second Language Lexical Choice" (TACL), built the Reddit-L2 corpus (also used by Goldin, Rabinovich & Wintner 2018 for native language identification). They did not use regex. Users were labelled by the country flairs they chose in r/europe, r/AskEurope, r/EuropeanCulture, r/EuropeanFederalists and r/Eurosceptics (489 flairs grouped by hand into 50 countries), and the label was then carried over to the users' whole Reddit history. Country stood in for L1: multilingual countries (Belgium, Switzerland) were excluded, users who changed their country flair were removed, and US users were left out of the native-English comparison set because of the high share of immigrants. They checked that the proxy holds with a classifier on function words and POS trigrams (90.8% accuracy for native vs. non-native).
+- Harrigian (2018), "Geocoding Without Geotags: A Text-based Approach for reddit" (W-NUT), took users' home locations from comments in "Where are you from?" threads. Comments containing "move", "moving", "born" or "raised" were dropped, and place names were matched against a gazetteer. In a manual check of 500 labels, 96.6% of location names were correct. Most errors came from users naming places other than their home.
+- Tigunova et al. (2020), "RedDust" (LREC), labelled 300k Reddit users for profession, hobby, family status, age and gender with high-precision self-disclosure patterns ("I am a ..."). Beller et al. (2014), "I'm a Belieber" (ACL), did the same for social roles on Twitter.
+- Wood-Doughty et al. (2021), "Using Noisy Self-Reports to Predict Twitter User Demographics": keyword matches include many non-self-reports (statements about other people, plurals, negations). They filtered these with a second, scored step, which is the job of the LLM here.
+- Gjurković et al. (2021), "PANDORA Talks" (SocialNLP): Reddit age, gender and location came mainly from flairs (annotated by hand) plus a few comment-level self-reports ("I'm 18 years old").
+No published work was found that extracts native language from comment text with regex. The closest is the flair-based approach of Reddit-L2.
+
+Input: the full comment histories of all users (format to be confirmed; assumed to be the same JSONL fields as the earlier steps: author, body, subreddit, created_utc, name/id, author_flair_text).
+
+Preprocessing of each comment body:
+- html.unescape (bodies contain &gt;, &amp;, ...).
+- Remove quoted lines (lines starting with ">"): they are someone else's words.
+- Match case-insensitively, but keep the original text. A few rules only accept a capitalised word (e.g. the language after "I speak", the place after "here in").
+
+The rules are in patterns.py (RULES; clean() and find() show how to apply them). Each rule has an ID, a category and trigger substrings. A rule only runs if one of its triggers occurs in the lowercased comment, which makes matching several times faster (about 10,000 comments per second on one core with all rules). Most rules capture the next 1-6 words (up to the first punctuation mark) as "value", since a single token cuts off "the United Kingdom", "New Zealand" or "rural Ontario".
+
+A: explicit statements about native language
+A1 "my native/first/mother/home language/tongue is X", "my L1 is X"
+A2 "X is/isn't my first/native/second/foreign language", "X is a second language" (captures the word before)
+A3 "I'm (not) a (non-)native ...", "as a (non-)native ...". Also catches "I'm a native Texan". Excludes "Native American(s)" and "native to".
+A4 "native (X) speaker here"
+A5 "native speaker of X" (singular only; the plural is almost always about other people)
+A6 "I speak/learned X natively/fluently/at home/as a child"
+A7 "I grew up / was raised speaking X", "... grew up bilingual"
+A8 "I'm monolingual/bilingual/trilingual/multilingual ..."
+A9 "in a X-speaking household/family/country ..."
+A10 "I (also/only/can't) speak (fluent/some/...) X (and Y)"
+B: non-native self-disclosure
+B1 "sorry for / excuse my (bad) English/grammar/spelling"
+B2 "my English is/isn't/was/sucks ...", "my English skills/level/accent ..."
+B3 "I ... learned/studied/picked up English (at school / from games ...)". Excludes "English lit/literature/major/degree".
+B4 "I'm ESL/EFL", any mention of TOEFL, IELTS, TOEIC, CAE, CPE or the Cambridge exams
+B5 "non-native" (anywhere; mostly about others, low weight)
+B6 "English as a/my second/foreign language"
+B7 "in/from/into my (own/native/mother) language (X)", "my mother/native tongue". Excludes "tip of my tongue" and "my language use/choice/skills".
+B8 "in X we say/call/have ...", "we have the same saying/word ... in X" (X a language name from LANGUAGES in patterns.py)
+B9 "I don't know / can't remember the English word/term for ...", "how do you say ... in English", "what's it called in English", "is this correct English", "translated (it) (directly) from X"
+B10 "my (thick/slight/...) German/foreign/... accent", "I have a (thick) X accent". Also catches "my Southern accent", which points to an origin instead.
+B11 "my parents/family/we/I don't/didn't speak (any) English (at home / until ...)"
+C: origin and residence
+C1 "I'm / I am / I come / we're (originally) from X", "my family/parents/mother/father/grandparents/... are/came from X" (also catches "where I'm from")
+C2 "I grew up / was born / was raised / born and raised in/near X", "I spent my childhood in X". Excludes "raised in a/an ..." (households, churches).
+C3 "I live/lived/have lived/am living/reside in X"
+C4 "I moved/emigrated/immigrated/relocated/came over to/from X", "when I (first) came to X" (X capitalised). "I came here to ..." is not matched.
+C5 "I'm / as a(n) (X) immigrant/expat/emigrant/migrant/refugee/foreigner/international student/exchange student"
+C6 "here in / back home in / over here in X" (X capitalised)
+C7 "my (home/native/own) country/homeland/motherland" (with X when it follows), "my hometown is/of X"
+C8 "I'm / as a(n) / we / us / being (a) X" for X in a list of demonyms in patterns.py (countries plus regions of English-speaking countries, e.g. Texan, Scouser, Queenslander)
+C9 "(Fellow) X here" at the start of a sentence, X a demonym
+C10 "my green card / citizenship test / naturalisation / residence permit / work visa", "my/a British passport", "dual citizen(ship)"
+C11 "my parents/family immigrated/emigrated/moved/fled to/from X", "child/son/daughter of (X) immigrants", "I'm (a) first/second-generation (X)". Heritage speakers: usually L1 English with another home language. Also catches "first-gen college student" and moves within a country.
+D: experiences that point to native English
+D1 "I taught/teach/am teaching English/ESL (in X)" (active voice only; "I was taught English" is E5), any mention of TEFL, TESOL or CELTA (native speakers often teach English abroad; the bare mentions are mostly discussion)
+E: family and childhood language environment
+These decide between L1 and L2 for users with a foreign origin (heritage speakers, growing up bilingual, moving as a child). In E1, E3, E5 and E6 the word after the verb must be a language name (LANGUAGES) or capitalised, which keeps out "my dad talked trash about ..." and "when I was 12, I knew better".
+E1 "my parents/mom/grandparents/... (only/still) speak/spoke/talk (to me) (in) X"
+E2 "my mom/dad/parents/grandmother/... is/are (both) X" (X a demonym), "my mother's side is X", "my parents are (both) native X speakers"
+E3 "at home / in our house we (only) speak/spoke X", "we speak X at home", "home/household/family language", "the language spoken at home"
+E4 "I went to / attended / was in a(n) (...) X-speaking / X-medium / international / bilingual / immersion / X (language or demonym) school/kindergarten/program/university"
+E5 "at/in school I/we had to / were taught to / weren't allowed to speak X", "... learned/spoke X", "I was taught X at school", "X was the (only/main) language at my school", "classes were (all) taught in X"
+E6 "as a kid / when I was (little/5) I (only) spoke/knew/learned X", "my first words were (in) X", "the first language I learned was X", "I didn't speak/know (a word of) X until/before ..."
+
+Things the rules cannot tell apart and leave to the LLM: statements about other people ("OP is ESL"), negation ("I'm not from"), hypotheticals ("if I lived in"), jokes and role play ("I'm from the future"), quotations not marked with ">", and mixed signals.
+
+Rough hit rates (step-4 cross-subreddit samples of political_progressive and gender_female, 287k comments): about 1 hit per 100 comments. Most hits come from C3, C8, C1 and C6. The A and B rules each fire only a few to a few dozen times per 100k comments, but are by far the strongest evidence.
+Left out on purpose: "sorry for any (spelling) mistakes". In the samples, it came almost only from native speakers typing on their phones. L2 apologies nearly always name English, which B1 and A2 catch.
+
+Besides the regex hits, the only other evidence collected are the flairs: all distinct (subreddit, author_flair_text) pairs per user. Country flairs (r/europe, r/AskEurope, r/soccer, national subreddits etc.; the method of Reddit-L2) and language flairs (e.g. in language-learning subreddits, listing native and learned languages) are the useful ones. A country flair can mean origin or residence, so it is treated like a residence statement.
+Not used: the share of a user's comments in other languages (it would also flag motivated learners of other languages and favour monolingual English speakers) and the subreddits a user comments in (not informative enough on their own).
+
+Output (proposed):
+- hits.jsonl: one row per hit: author, comment name (t1_...), subreddit, created_utc, rule ID, category, matched text, captured value, and the sentence around the match (about 200 characters each side).
+- user_evidence.jsonl: one row per user with their hits (up to 10 per rule, with A and B rules first and the rest spread over time) and distinct flairs. This is what the LLM gets. Users with no hits and no flairs are not sent to the LLM and are labelled "ambiguous" directly.
+- labels.jsonl: per user the label (confirmed L1 / confirmed L2 / ambiguous), the comment names the decision rests on, and a one-sentence reason from the LLM.
+
+Guidance for the LLM (to be turned into the prompt):
+- First decide for each hit whether it is the user talking about themselves. Statements about others ("OP is ESL"), negations, hypotheticals, jokes, role play and quotations do not count.
+- Confirmed L1: the user says English is (one of) their native or first language(s), says they only speak English or are monolingual, or grew up with English (also as one of two languages; see Definitions). Or: origin or residence in one of the English-majority countries, and nothing pointing to another native language or to growing up elsewhere.
+- Confirmed L2: the user says another language is their (only) native language, that English is a second or foreign language for them, that they learned English at school or later, or that they are ESL. Or: origin in a country where English is not a majority native language, and nothing pointing to growing up with English (see Definitions). Weaker cues (B7-B10: "in my language", "in German we say", asking for English words, a foreign accent) support this but do not confirm L2 alone. Growing up bilingually with English makes a user L1 even if they also name another native language.
+- Use the E hits (and C11) to decide about users with a foreign origin. English at home, at school from the start or in early childhood makes them L1; another home language and English learned only at school or later makes them L2. Parents' languages or origin alone (E1, E2) do not decide it, since many children of immigrants grow up with English.
+- Ambiguous: everything else, including users whose evidence contradicts itself.
