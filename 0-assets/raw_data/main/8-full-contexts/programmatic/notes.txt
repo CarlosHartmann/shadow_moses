@@ -1,0 +1,40 @@
+This step ("forest recon") turns the study comments into discussions: the conversations in which "OP" is referred to. At this stage only the structure is built, from comment, parent and submission ids (the index described in forest_recon_index.md); no text is read. The text is extracted from the dumps afterwards, in one pass, for exactly the comments and submissions the structure names.
+
+Definitions
+- A mention is a comment containing "OP" (case-sensitive, standalone), i.e. any comment of ../../2-filtering/filtered_comments.jsonl (53,006,559 comments), not only the study comments. "OP" in submissions is not a mention: there it refers to someone other than the poster.
+- The seeds are the 3,150,973 comments of the finalised study datasets (as in ../../7-unique-usernames-and-subreddits), baseline included.
+- For each seed, the initial mention is the topmost mention on its path from the post down to the seed (the seed itself if there is none above it). Every mention below it on that path belongs to the same discussion. Mentions in other branches start their own discussions, since their speakers need not have read the other branch.
+- A discussion is named after its initial mention: t1_<initial mention id>. Discussions never overlap.
+- A discussion consists of:
+  - the submission (title, content, author, flairs);
+  - the context: the comments from the one replying to the submission down to the parent of the initial mention (only that chain, without its side branches);
+  - the body: the initial mention and everything below it, all branches;
+  - at the end, as evidence of whether OP's gender was known, the comments of the submission's author anywhere in the thread.
+- Only discussions containing at least one seed are built.
+- Comments by the submission's author that contain "OP" (e.g. "OP here") stay in the discussion but are not mentions. Authors are not in the index, so this is sorted out after the text extraction (or by the LLM step).
+- Anaphora are later counted only for users whose metadata are confirmed (the study groups); the other comments are context.
+
+Scripts (run in this order; all write to work/, which is gitignored)
+1. prepare_ids.py: op_ids.parquet (all mention ids) and seeds.parquet (seed ids with thread, time, subreddit and study groups). About 1 min; reads only the internal disk.
+2. scan_threads.py: one scan of the index's by_id copy (200 files, 108.7 GB on rdisk2), keeping every comment of the seeds' threads (~2.5 million submissions). One output file per index file; resumable; logs rate and ETA after each file.
+3. build_forest.py: builds the discussions from those rows, without reading rdisk2. Outputs in work/forest/: discussions.parquet (one row per discussion with size, depth and branching), members.parquet (every comment of every discussion with its role, depth, parent and flags), seed_map.parquet (every seed with its discussion and whether it is the initial mention).
+Comment and submission ids are stored as integers (base 36 decoded, as in the index); discussion ids as "t1_" + base 36.
+
+Pilot (2026-10-27)
+- Scan of 9 index files (part-029-031, 109-111, 179-181; 4.7 GB) took 9.5 min, at about 8 MB/s while the sayer-histories extraction was reading the same disk. 30.7 million rows were kept (186 MB).
+- Forest for the 46,262 seeds of the three middle files (1.5% of all seeds), in 49 s:
+  - 87% of the seeds are initial mentions; 13% belong to a discussion started higher up. 44,017 discussions.
+  - Body size (initial mention and everything below): median 2 comments, 90% up to 8, 99% up to 42, 99.9% up to 247, maximum 2,787. 49% of the bodies are the initial mention alone.
+  - Body depth: median 1, 99% up to 13, maximum 989 (a chain of single replies). Most replies to one comment: median 1, 99% up to 8, maximum 1,183.
+  - Context size: median 1, 99% up to 9, maximum 803.
+  - 0.25% of the upward walks stop below the top (ancestor not in the index; partly an effect of the pilot reading only three files per period).
+  - About 6 comments per discussion in total.
+- Extrapolated to all seeds: about 3 million discussions with about 18 million comments, plus ~2.5 million submissions and the submitters' comments. The full scan should take about 4 h (less with an idle disk), the forest build well under 1 h.
+
+Limitations
+- Replies after 2021-09 are not in the index, so discussions from the last weeks of September 2021 can lack later replies.
+- Mentions in comments that were deleted or removed before being archived cannot be seen; a lower mention then counts as the initial one.
+- Lowercase "op" and bot comments (filtered out in step 2) are not mentions.
+- A study user's comment without "OP" (anaphora only) is included only if it lies in a discussion that some seed starts or belongs to.
+- Ancestors from before 2010 and comments posted during the gaps of the dumps (forest_recon_index.md, Q5; mostly 2010-2012) are missing; such upward walks stop early and are flagged (upward_complete = false).
+- The 9 comments from the six subreddits that are not indexed are handled by hand in ../manual/. Under the definition above, each of them is its own initial mention, so their file names stay.

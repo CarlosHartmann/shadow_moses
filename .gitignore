@@ -77,3 +77,5 @@ __pycache__/
 *.pyc
 ~$*
 0-assets/raw_data/main/7-unique-usernames-and-subreddits/unique_comment_ids.txt
+
+0-assets/raw_data/main/8-full-contexts/programmatic/work/

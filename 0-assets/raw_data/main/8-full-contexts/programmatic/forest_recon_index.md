@@ -313,9 +313,56 @@ Write your questions below. The user will pass them to the otacon session that b
 
 We want to walk up and down for ~3.15 million comments at once (section 6.4). Did you try a join (ids registered as a table, joined against `by_id` / `by_parent`) at any scale, and how long did one level take? Does DuckDB prune row groups for a join on the sorted key the way it does for `IN` lists, or does each level read the whole copy (~100 GB, ~1 h or more)?
 
+**Answer (otacon session, 2026-10-27):** Measured today on `by_id`, with DuckDB 1.3.2, 1 thread and a 3 GB memory limit, while the sayer workers were also reading rdisk2. I used two sets of 2,000 ids from `unique_comment_ids.txt`:
+
+- **adjacent:** 2,000 consecutive ids in id order;
+- **scattered:** 2,000 random ids spread over 2010–2021.
+
+Each query counted the matches. Times cover two runs (`EXPLAIN ANALYZE` plus the real query), so one run is about half:
+
+| Id set | Method | Rows scanned | Time for 2 runs |
+|---|---|---|---|
+| adjacent | join with a registered Arrow table | 6.3 M | 38 s |
+| adjacent | `IN (…)` list | 6.5 M | 3 s |
+| scattered | join | **10,356,867,173 (all)** | **3,152 s (~26 min per run)** |
+| scattered | `IN (…)` list | 243 M | 124 s (~1 min per run) |
+
+What this means:
+
+- **A join prunes only by the minimum and maximum of the joined ids.** DuckDB 1.3.2 passes the join keys' min/max down to the Parquet scan. That skips row groups only when the ids sit in a narrow range. For scattered ids the range spans everything, so the join reads the whole `id` column of `by_id`, all 10.4 billion values. That took about 26 min per run here.
+- **An `IN` list prunes per row group.** It skips every row group whose min/max range contains none of the listed ids. That is fast for a few thousand ids, wherever they are.
+- **For 3.15 million ids, neither method can skip much.** `by_id` has 84,551 row groups, so the study ids average about 37 per row group, and nearly every row group contains at least one. **The first level is therefore effectively a full scan either way.** A join is the better tool for that level: one statement, roughly half an hour on a shared disk (not measured at this size).
+- **Recommendation:**
+  - Use a join while the frontier is large.
+  - Switch to sorted `IN` lists of a few thousand ids once the frontier has shrunk. Upward frontiers shrink quickly, because most chains are short.
+  - Downward, apply the same rule to `by_parent/part-0-*`, which has the same layout.
+- **A one-pass alternative:** read `by_id` once with a semi-join on `link_id` against the ~2.5 million submissions. That extracts every row of every relevant thread. Then do all the walking on that much smaller extract, on a faster disk.
+  - Its cost is one full read of `by_id`: about 101 GB, so roughly 1–3 h at 10–40 MB/s, more while the disk is shared.
+  - It removes the per-level scans, and it also gives you whole threads if you want them.
+  - Whether the extract is small enough depends on the thread sizes, so answer Q3 first.
+
 ### Q3: Can thread sizes per submission be counted cheaply?
 
 To judge how heavy whole threads would be, we would like the number of comments per `link_id` for ~2.5 million submissions. Is there a cheaper way than one full scan of `by_id` grouped by `link_id`? And if a full scan is the way, is one single-threaded pass over `by_id` (~101 GB) the right estimate (roughly 1–3 h on rdisk2)?
+
+**Answer (otacon session, 2026-10-27):**
+
+- **No counts per submission are stored.** The only cheap partial count is the number of **top-level** comments per submission. Those rows are in `by_parent/part-1-*`, sorted by `parent_id` (which equals `link_id` for those rows), so the scan prunes well. Replies deeper down are not included in that count.
+- **For the full counts, a full scan is needed, but only of one column.** Parquet stores each column separately. A `SELECT link_id, count(*) … GROUP BY link_id` with a semi-join on the wanted submissions reads only the `link_id` column. The compressed sizes of the `by_id` columns are:
+
+  | Column | Compressed size | Share |
+  |---|---|---|
+  | `parent_id` | 35.2 GB | 32.5% |
+  | `subreddit` | 29.8 GB | 27.6% |
+  | `link_id` | 29.6 GB | 27.4% |
+  | `id` | 10.6 GB | 9.8% |
+  | `created_utc` | 1.7 GB | 1.6% |
+  | `parent_is_submission` | 1.3 GB | 1.2% |
+
+- **Time estimate:** reading one column means one read per row group, and there are 84,551 of them spread over 101 GB. Today the 1.7 GB `created_utc` column took 21 min (1,286 s) and the 10.6 GB `id` column about 26 min, both while the sayer workers were reading the same disk. So expect **roughly 0.5–1.5 h** for `link_id` (an estimate, not measured).
+  - Grouping by 2.5 million keys fits comfortably in a 5 GB memory limit.
+  - Use 1 thread: parallel reads make this disk slower.
+- **The same pass can feed Q2's one-pass alternative.** With the counts in hand, you can decide whether extracting whole threads is affordable.
 
 ### Q4: How were duplicate comment ids in the dumps handled?
 
