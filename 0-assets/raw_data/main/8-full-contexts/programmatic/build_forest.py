@@ -11,10 +11,10 @@ Definitions (see notes.txt):
   Discussions are only built if they contain a seed.
 
 Inputs (work directory): thread_rows/*.parquet (scan_threads.py), seeds.parquet, op_ids.parquet.
-Outputs (output directory):
-- discussions.parquet: one row per discussion, with size, depth and branching statistics
-- members.parquet: every comment of every discussion (role context/body, depth, parent, flags)
-- seed_map.parquet: every seed with its discussion, or why it has none
+Outputs (output directory; one part-NNNN.parquet per bucket in each folder, so the build can resume):
+- discussions/: one row per discussion, with size, depth and branching statistics
+- members/: every comment of every discussion (role context/body, depth, parent, flags)
+- seed_map/: every seed with its discussion, or why it has none
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 HERE = Path(__file__).resolve().parent
-ROWS_PER_BUCKET = 5_000_000
+ROWS_PER_BUCKET = 1_500_000  # keeps the build at about 1-2 GB of memory
 DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 DISCUSSION_SCHEMA = pa.schema([
@@ -121,11 +121,18 @@ def build_thread(link, rows, seeds, discussions, members, seed_rows):
             seed_rows.append((seed, discussion_id, seed == initial, "ok"))
 
 
+def write_part(path: Path, schema: pa.Schema, rows: list) -> None:
+    temporary = path.with_name(f".{path.name}.tmp")
+    pq.write_table(pa.Table.from_pylist([dict(zip(schema.names, row)) for row in rows], schema=schema),
+                   temporary)
+    temporary.rename(path)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--work-dir", type=Path, default=HERE / "work")
     parser.add_argument("--out-dir", type=Path, default=HERE / "work" / "forest")
-    parser.add_argument("--memory-limit", default="4GB")
+    parser.add_argument("--memory-limit", default="1500MB")
     parser.add_argument("--seed-filter", default="",
                         help="SQL condition on seeds (s.id, s.link_id), e.g. to restrict a pilot")
     args = parser.parse_args()
@@ -134,34 +141,52 @@ def main() -> None:
     con.execute(f"SET memory_limit = '{args.memory_limit}'")
     con.execute("SET preserve_insertion_order = false")
     w = args.work_dir
+    con.execute(f"SET temp_directory = '{w / 'duckdb_tmp'}'")
     where = f"WHERE {args.seed_filter}" if args.seed_filter else ""
     con.execute(f"CREATE TABLE seeds AS SELECT s.id, s.link_id FROM '{w / 'seeds.parquet'}' s {where}")
-    # Duplicates in the dumps are possible (forest_recon_index.md, Q4): keep one row per id.
-    con.execute(f"""CREATE VIEW rows AS
-        SELECT r.id, any_value(r.parent_id) AS parent_id, any_value(r.parent_is_submission) AS is_sub,
-               any_value(r.link_id) AS link_id, min(r.created_utc) AS created_utc
-        FROM read_parquet('{w / 'thread_rows' / '*.parquet'}') r
-        WHERE r.link_id IN (SELECT link_id FROM seeds) GROUP BY r.id""")
-    (total,) = con.execute("SELECT count(*) FROM rows").fetchone()
-    buckets = max(1, -(-total // ROWS_PER_BUCKET))
-    log(f"{total:,} thread rows, {buckets} buckets")
 
-    writers = {name: pq.ParquetWriter(args.out_dir / f"{name}.parquet", schema)
-               for name, schema in (("discussions", DISCUSSION_SCHEMA), ("members", MEMBER_SCHEMA),
-                                    ("seed_map", SEED_SCHEMA))}
+    # One pass splits the rows by bucket, so that each bucket reads only its own files. Duplicates in the dumps (forest_recon_index.md, Q4) collapse when the rows
+    # are put into dicts below. The split is reused when the script is run again.
+    rows_dir = args.out_dir / "rows_by_bucket"
+    marker = rows_dir / "_buckets.txt"
+    if marker.exists():
+        buckets = int(marker.read_text())
+        log(f"reusing the split into {buckets} buckets")
+    else:
+        source = f"""FROM read_parquet('{w / 'thread_rows' / '*.parquet'}') r
+                     WHERE r.link_id IN (SELECT link_id FROM seeds)"""
+        (total,) = con.execute(f"SELECT count(*) {source}").fetchone()
+        buckets = max(1, -(-total // ROWS_PER_BUCKET))
+        con.execute(f"""COPY (SELECT r.id, r.parent_id, r.parent_is_submission AS is_sub, r.link_id,
+                                     r.created_utc, r.link_id % {buckets} AS bucket {source})
+                        TO '{rows_dir}' (FORMAT parquet, PARTITION_BY (bucket), OVERWRITE)""")
+        marker.write_text(str(buckets))
+        log(f"{total:,} thread rows, split into {buckets} buckets")
+
+    # One file per bucket and output; a bucket whose seed_map file exists is done (written last).
+    outputs = (("discussions", DISCUSSION_SCHEMA), ("members", MEMBER_SCHEMA), ("seed_map", SEED_SCHEMA))
+    for name, _schema in outputs:
+        (args.out_dir / name).mkdir(exist_ok=True)
+    todo = [b for b in range(buckets) if not (args.out_dir / "seed_map" / f"part-{b:04d}.parquet").exists()]
+    log(f"{buckets - len(todo)} buckets already done, {len(todo)} to build")
     started = time.monotonic()
-    for bucket in range(buckets):
-        table = con.execute(f"""
-            SELECT r.*, (o.id IS NOT NULL) AS is_mention, (s.id IS NOT NULL) AS is_seed
-            FROM rows r
-            LEFT JOIN '{w / 'op_ids.parquet'}' o ON o.id = r.id
-            LEFT JOIN seeds s ON s.id = r.id
-            WHERE r.link_id % {buckets} = {bucket}""").to_arrow_table()
+    for number, bucket in enumerate(todo, start=1):
         threads = defaultdict(dict)
-        cols = [table.column(n).to_pylist() for n in
-                ("id", "parent_id", "is_sub", "link_id", "created_utc", "is_mention", "is_seed")]
-        for cid, parent, is_sub, link, created, mention, is_seed in zip(*cols):
-            threads[link][cid] = (parent, is_sub, created, mention, is_seed)
+        partition = rows_dir / f"bucket={bucket}"
+        if partition.exists():  # absent if no seed thread of this bucket is in the index
+            # Mentions and seeds are marked per bucket: the join is cheap with a bucket on the build side.
+            table = con.execute(f"""
+                SELECT r.id, r.parent_id, r.is_sub, r.link_id, r.created_utc,
+                       (o.id IS NOT NULL) AS is_mention, (s.id IS NOT NULL) AS is_seed
+                FROM read_parquet('{partition / '*.parquet'}') r
+                LEFT JOIN '{w / 'op_ids.parquet'}' o ON o.id = r.id
+                LEFT JOIN seeds s ON s.id = r.id""").to_arrow_table()
+            cols = [table.column(n).to_pylist() for n in
+                    ("id", "parent_id", "is_sub", "link_id", "created_utc", "is_mention", "is_seed")]
+            del table
+            for cid, parent, is_sub, link, created, mention, is_seed in zip(*cols):
+                threads[link][cid] = (parent, is_sub, created, mention, is_seed)
+            del cols
         seed_table = con.execute(f"SELECT id, link_id FROM seeds WHERE link_id % {buckets} = {bucket}").fetchall()
         seeds_by_thread = defaultdict(list)
         for sid, link in seed_table:
@@ -169,17 +194,14 @@ def main() -> None:
         discussions, members, seed_rows = [], [], []
         for link, seeds in seeds_by_thread.items():
             build_thread(link, threads.get(link, {}), seeds, discussions, members, seed_rows)
-        for name, rows in (("discussions", discussions), ("members", members), ("seed_map", seed_rows)):
-            if rows:
-                schema = writers[name].schema
-                writers[name].write_table(pa.Table.from_pylist(
-                    [dict(zip(schema.names, row)) for row in rows], schema=schema))
+        del threads
+        for (name, schema), rows in zip(outputs, (discussions, members, seed_rows)):
+            write_part(args.out_dir / name / f"part-{bucket:04d}.parquet", schema, rows)
         elapsed = time.monotonic() - started
-        eta = timedelta(seconds=round(elapsed / (bucket + 1) * (buckets - bucket - 1)))
-        log(f"[{bucket + 1}/{buckets}] {len(discussions):,} discussions, {len(members):,} members, "
-            f"elapsed {timedelta(seconds=round(elapsed))}, ETA {eta}")
-    for writer in writers.values():
-        writer.close()
+        eta = timedelta(seconds=round(elapsed / number * (len(todo) - number)))
+        log(f"[{number}/{len(todo)}] bucket {bucket}: {len(discussions):,} discussions, "
+            f"{len(members):,} members, elapsed {timedelta(seconds=round(elapsed))}, ETA {eta} "
+            f"(~{datetime.now() + eta:%a %H:%M})")
     log("done")
 
 

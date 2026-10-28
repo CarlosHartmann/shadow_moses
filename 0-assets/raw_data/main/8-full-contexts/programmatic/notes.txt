@@ -17,7 +17,7 @@ Definitions
 Scripts (run in this order; all write to work/, which is gitignored)
 1. prepare_ids.py: op_ids.parquet (all mention ids) and seeds.parquet (seed ids with thread, time, subreddit and study groups). About 1 min; reads only the internal disk.
 2. scan_threads.py: one scan of the index's by_id copy (200 files, 108.7 GB on rdisk2), keeping every comment of the seeds' threads (~2.5 million submissions). One output file per index file; resumable; logs rate and ETA after each file.
-3. build_forest.py: builds the discussions from those rows, without reading rdisk2. Outputs in work/forest/: discussions.parquet (one row per discussion with size, depth and branching), members.parquet (every comment of every discussion with its role, depth, parent and flags), seed_map.parquet (every seed with its discussion and whether it is the initial mention).
+3. build_forest.py: builds the discussions from those rows, without reading rdisk2. It first splits the rows into buckets of about 1.5 million (work/forest/rows_by_bucket/), then builds bucket by bucket. Outputs in work/forest/, one part-NNNN.parquet per bucket, so an interrupted build resumes: discussions/ (one row per discussion with size, depth and branching), members/ (every comment of every discussion with its role, depth, parent and flags), seed_map/ (every seed with its discussion and whether it is the initial mention). About 1.2 GB of memory.
 Comment and submission ids are stored as integers (base 36 decoded, as in the index); discussion ids as "t1_" + base 36.
 
 Pilot (2026-10-27)
@@ -30,6 +30,19 @@ Pilot (2026-10-27)
   - 0.25% of the upward walks stop below the top (ancestor not in the index; partly an effect of the pilot reading only three files per period).
   - About 6 comments per discussion in total.
 - Extrapolated to all seeds: about 3 million discussions with about 18 million comments, plus ~2.5 million submissions and the submitters' comments. The full scan should take about 4 h (less with an idle disk), the forest build well under 1 h.
+
+Full run (2026-10-27)
+- Scan: 191 index files (104 GB; the 9 pilot files were reused) in 1 h 21 min, at about 21 MB/s while the sayer-histories extraction was reading the same disk. 745.5 million thread rows in total (4.4 GB).
+- Build: a first version re-read all rows for each of its 150 buckets (7.5 min per bucket, 52 GB of DuckDB spill files); a second one held 6 GB of memory and stalled in swap at bucket 141, next to the sayer workers (about 10 GB on a 16 GB machine). Neither left usable output. The present version (smaller buckets, one file per bucket, about 1.2 GB) ran overnight next to the sayer extraction: split 50 min, 498 buckets in 4 h 33 min (done 05:35 on 2026-10-28). The Python process then did not exit (probably swapped out while shutting down) and was stopped after 20 min by a watchdog; all output files had been written and renamed by then.
+
+Results of the full build
+- All 3,150,973 seeds have a discussion: 2,765,376 (88%) are initial mentions, 385,597 belong to a discussion started higher up. None is missing from the index (this includes the 9 comments in ../manual/: their subreddits turned out to be in the index too, and the forest gives them the same discussion names).
+- 3,006,374 discussions in 2,514,433 threads.
+- Body size: median 2, 90% up to 7, 99% up to 42, 99.9% up to 227, maximum 38,261; 50% of the bodies are the initial mention alone. Body depth: median 1, 99% up to 13, maximum 29,364. Most replies to one comment: 99% up to 8, maximum 2,180. Context: median 1, 99% up to 10, maximum 2,819. Seeds per discussion: 99% up to 2, maximum 60.
+- 223 upward walks (0.007%) stop below the top.
+- 18,041,469 member rows; 17,861,694 distinct comments (13,020,422 in bodies, 4,841,272 in contexts; contexts are shared by sibling discussions).
+- Heavy discussions (body above 250 comments or deeper than 50 levels): 3,307, with 1.28 million body comments (10% of all body comments) but only 7,811 seeds (0.25%). The largest, t1_c3ntogw, is a chain of 38,261 comments, 29,364 levels deep.
+- To extract: 17,861,694 comments and 2,514,433 submissions, plus the submitters' comments in those threads (not countable yet: the index has no authors).
 
 Limitations
 - Replies after 2021-09 are not in the index, so discussions from the last weeks of September 2021 can lack later replies.
