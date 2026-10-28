@@ -18,6 +18,7 @@ Scripts (run in this order; all write to work/, which is gitignored)
 1. prepare_ids.py: op_ids.parquet (all mention ids) and seeds.parquet (seed ids with thread, time, subreddit and study groups). About 1 min; reads only the internal disk.
 2. scan_threads.py: one scan of the index's by_id copy (200 files, 108.7 GB on rdisk2), keeping every comment of the seeds' threads (~2.5 million submissions). One output file per index file; resumable; logs rate and ETA after each file.
 3. build_forest.py: builds the discussions from those rows, without reading rdisk2. It first splits the rows into buckets of about 1.5 million (work/forest/rows_by_bucket/), then builds bucket by bucket. Outputs in work/forest/, one part-NNNN.parquet per bucket, so an interrupted build resumes: discussions/ (one row per discussion with size, depth and branching), members/ (every comment of every discussion with its role, depth, parent and flags), seed_map/ (every seed with its discussion and whether it is the initial mention). About 1.2 GB of memory.
+4. export_extraction_ids.py: the id lists for the text extraction (work/extraction_ids/: comment ids per UTC month, i.e. per RC dump file; submission ids; manifest.tsv with the counts). Copied to otacon/past_commands/forest_text_extraction/ids/, where ORDER.md specifies the extraction for an otacon agent.
 Comment and submission ids are stored as integers (base 36 decoded, as in the index); discussion ids as "t1_" + base 36.
 
 Pilot (2026-10-27)
