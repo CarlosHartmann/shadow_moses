@@ -16,7 +16,7 @@ from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_INPUT = HERE.parent / "2-filtering" / "filtered_comments.jsonl"
+DEFAULT_INPUT = HERE.parent / "02-filtering" / "filtered_comments.jsonl"
 DEFAULT_OUTPUT_DIR = HERE / "grouped_subreddit_data"
 SUBREDDIT_LISTS_DIR = HERE / "subreddit_lists"
 STATISTICS_START_YEAR = 2010

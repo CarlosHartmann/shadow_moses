@@ -14,7 +14,7 @@ from openpyxl import load_workbook
 
 
 HERE = Path(__file__).resolve().parent
-GROUPING_DIR = HERE.parent / "3a-grouping"
+GROUPING_DIR = HERE.parent / "03a-grouping"
 sys.path.insert(0, str(GROUPING_DIR))
 
 # The same flair normalisation as 3a, so that every flair 3a found relevant is found here too.

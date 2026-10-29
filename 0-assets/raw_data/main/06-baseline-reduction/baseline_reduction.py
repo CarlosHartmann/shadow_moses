@@ -20,11 +20,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_INPUT = (
-    HERE.parent / "4-cross-subreddit-data" / "cross_subreddit_data" / "baseline.jsonl"
+    HERE.parent / "04-cross-subreddit-data" / "cross_subreddit_data" / "baseline.jsonl"
 )
 DEFAULT_OUTPUT = HERE / "reduced_baseline.jsonl"
 DEFAULT_SUBREDDITS = (
-    HERE.parent / "7-unique-usernames-and-subreddits" / "indexed_subreddits.txt"
+    HERE.parent / "07-unique-usernames-and-subreddits" / "indexed_subreddits.txt"
 )
 DEFAULT_SAMPLE_SIZE = 1_000_000
 DEFAULT_SEED = 42

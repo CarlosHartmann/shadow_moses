@@ -1,6 +1,6 @@
 """Step 1 of the forest recon: collect the ids that the tree building starts from.
 
-- op_ids.parquet: every comment that contains "OP" (all of ../../2-filtering/filtered_comments.jsonl),
+- op_ids.parquet: every comment that contains "OP" (all of ../../02-filtering/filtered_comments.jsonl),
   as integer ids (base 36 decoded, as in the index), sorted. These decide which comment of a path is
   the initial mention.
 - seeds.parquet: every comment of the finalised study datasets (as in step 7), with its thread
@@ -19,7 +19,7 @@ import duckdb
 
 HERE = Path(__file__).resolve().parent
 MAIN = HERE.parents[1]
-FILTERED = MAIN / "2-filtering" / "filtered_comments.jsonl"
+FILTERED = MAIN / "02-filtering" / "filtered_comments.jsonl"
 AGE_GROUPS = ("age_silent", "age_boomer", "age_X", "age_millennial", "age_Z", "age_young", "age_old")
 OTHER_GROUPS = (
     "gender_male",
@@ -31,12 +31,12 @@ OTHER_GROUPS = (
 )
 # group -> files (original and cross-subreddit comments), the same finalised datasets as in step 7
 STUDY_FILES = {
-    **{g: [MAIN / "3b-age-grouping" / f"{g}.jsonl"] for g in AGE_GROUPS},
-    **{g: [MAIN / "3a-grouping" / "grouped_subreddit_data" / f"{g}.jsonl"] for g in OTHER_GROUPS},
-    "baseline": [MAIN / "6-baseline-reduction" / "reduced_baseline.jsonl"],
+    **{g: [MAIN / "03b-age-grouping" / f"{g}.jsonl"] for g in AGE_GROUPS},
+    **{g: [MAIN / "03a-grouping" / "grouped_subreddit_data" / f"{g}.jsonl"] for g in OTHER_GROUPS},
+    "baseline": [MAIN / "06-baseline-reduction" / "reduced_baseline.jsonl"],
 }
 for group in (*AGE_GROUPS, *OTHER_GROUPS):
-    STUDY_FILES[group].append(MAIN / "4-cross-subreddit-data" / "cross_subreddit_data" / f"{group}.jsonl")
+    STUDY_FILES[group].append(MAIN / "04-cross-subreddit-data" / "cross_subreddit_data" / f"{group}.jsonl")
 
 JSON_OPTIONS = "format = 'newline_delimited', maximum_object_size = 16777216"
 # Reddit ids are base 36; DuckDB has no base-36 cast, so it is spelled out (ids are at most 13 digits).

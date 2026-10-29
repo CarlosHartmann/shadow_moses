@@ -1,12 +1,12 @@
 # Forest recon: the Reddit comment-forest index
 
-This document hands the "forest recon" work over to shadow_moses. It explains what was built, where the data are, and how to use them to rebuild the comment contexts that belong in this folder (`8-full-contexts/programmatic`; see `../explanation.txt` for the purpose of the step).
+This document hands the "forest recon" work over to shadow_moses. It explains what was built, where the data are, and how to use them to rebuild the comment contexts that belong in this folder (`08-full-contexts/programmatic`; see `../explanation.txt` for the purpose of the step).
 
 State as of 2026-10-27. The index was built in the otacon repository (`/Users/uni/Documents/GitHub/otacon`, code in `otacon/thread_index.py`). Nothing has been built in shadow_moses yet.
 
 ## 1. In short
 
-- The index is a set of Parquet files covering **10,380,132,054 Reddit comments** from **2010-01 to 2021-09**, limited to the **39,867 subreddits** in `../../7-unique-usernames-and-subreddits/indexed_subreddits.txt`.
+- The index is a set of Parquet files covering **10,380,132,054 Reddit comments** from **2010-01 to 2021-09**, limited to the **39,867 subreddits** in `../../07-unique-usernames-and-subreddits/indexed_subreddits.txt`.
 - It holds **only the tree structure**: comment id, parent, thread, time and subreddit. It holds **no text, no author and no score**. The text has to be fetched from the Pushshift dumps (section 6.5).
 - It comes in two sorted copies:
   - `by_id` lets you walk **up** from a comment to its ancestors.
@@ -51,7 +51,7 @@ These are zstd-compressed JSON lines, one object per comment or submission. `ota
 
 ### 2.4 Inputs on the shadow_moses side
 
-In `../../7-unique-usernames-and-subreddits/` (see `notes.txt` there):
+In `../../07-unique-usernames-and-subreddits/` (see `notes.txt` there):
 
 - `indexed_subreddits.txt`: the 39,867-name list the index was filtered by. It is a copy of `unique_subreddits.txt` as of 2026-10-16.
 - `unique_subreddits.txt`: the current list, 34,475 names. All of them are in the index except the 6 listed below.

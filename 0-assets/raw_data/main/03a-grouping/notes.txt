@@ -13,7 +13,7 @@ The subreddit lists for each group (except baseline) are in the directory "subre
 For each group, here is what to pull out of the data.
 
 age:
-The age group is one group (not split into young and old here; that happens in ../3b-age-grouping). Only include comments if their flair is relevant on the "age" sheet of grouped_flairs.xlsx. A flair is relevant there if at least one of the annotation columns given_age, given_birthyear, given_agerange, given_birthyear_range, given_generation or given_description has a value. Rows with none of these filled in are not processable and therefore irrelevant. A leftover "X" (the old relevance marker) does not count as an annotation. The same subreddit and flair can occupy several rows of the age sheet; it is relevant if any of its rows is annotated.
+The age group is one group (not split into young and old here; that happens in ../03b-age-grouping). Only include comments if their flair is relevant on the "age" sheet of grouped_flairs.xlsx. A flair is relevant there if at least one of the annotation columns given_age, given_birthyear, given_agerange, given_birthyear_range, given_generation or given_description has a value. Rows with none of these filled in are not processable and therefore irrelevant. A leftover "X" (the old relevance marker) does not count as an annotation. The same subreddit and flair can occupy several rows of the age sheet; it is relevant if any of its rows is annotated.
 
 gender_male, gender_female:
 Only include comments if their flair is marked as relevant in grouped_flairs.xlsx.
@@ -36,11 +36,11 @@ Empty flairs are not considered relevant under the rules for grouped_flairs.xlsx
 
 Output statistics how many comments there are per group by every quartal (three-month period) in the data.
 The count starts with 2010, not earlier.
-The age group is left out of these statistics; the group_by scripts in ../3b-age-grouping produce the age statistics.
+The age group is left out of these statistics; the group_by scripts in ../03b-age-grouping produce the age statistics.
 
 Ensure you don't load the entire dataset into memory at once.
 
-User overrides: the sheet user_group_overrides in grouped_flairs.xlsx (written by ../5-overlap-audit/apply_decisions.py) bars single users from the other groups of their family (age, gender, political, gender_political). If the decided group lies outside the family (diverse users go to gender_political_progressive), the user's comments from the family's subreddits (e.g. those in subreddit_lists/gender_male.txt and gender_female.txt) are also put into that group, ignoring flair and score. Their comments from the decided group's own subreddits follow the normal rules.
+User overrides: the sheet user_group_overrides in grouped_flairs.xlsx (written by ../05-overlap-audit/apply_decisions.py) bars single users from the other groups of their family (age, gender, political, gender_political). If the decided group lies outside the family (diverse users go to gender_political_progressive), the user's comments from the family's subreddits (e.g. those in subreddit_lists/gender_male.txt and gender_female.txt) are also put into that group, ignoring flair and score. Their comments from the decided group's own subreddits follow the normal rules.
 
 Comments without a known author ([deleted], [removed]) are put into no group, because they cannot be balanced per user (in practice this only concerns comments from high-likelihood subreddits before 2012, since all other group comments need a flair).
 
@@ -49,6 +49,6 @@ Log the time it takes and output it along with the statistics.
 Unless it exists already, output an XLSX file named "grouped_flairs.xlsx" in which each group has its own sheet. On its sheet, include all unique subreddit and flair combinations encountered in the data for that group. Add a column named "relevant" and leave it empty for new combinations; an empty value means not relevant until someone fills it in (e.g. with "X"). If it does already exist, update it with any new subreddit and flair combinations encountered.
 The "age" sheet is different: it has the columns subreddit, flair, given_age, given_birthyear, given_generation, given_agerange, given_birthyear_range and given_description (annotated by hand and in the course of this study, not by the script). New subreddit and flair combinations are appended there with all annotation columns blank, i.e. irrelevant until they are annotated. The script never writes an "X" into the age sheet.
 
-Output the group data in the directory "grouped_subreddit_data". The age data is written to a single age.jsonl; ../3b-age-grouping takes it from there.
+Output the group data in the directory "grouped_subreddit_data". The age data is written to a single age.jsonl; ../03b-age-grouping takes it from there.
 
 Output formats: jsonl as before.

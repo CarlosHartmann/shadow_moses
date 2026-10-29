@@ -13,7 +13,7 @@ SCRIPT_DIR = (
     / "0-assets"
     / "raw_data"
     / "main"
-    / "4-cross-subreddit-data"
+    / "04-cross-subreddit-data"
 )
 sys.path.insert(0, str(SCRIPT_DIR))
 

@@ -1,8 +1,8 @@
 """Write the decisions in overlap_audit.xlsx into grouped_flairs.xlsx as per-user override sheets.
 
-- age_user_overrides: "birth year(s)" rows of the Decisions sheet; read by 3b-age-grouping/deduce_birthyear.py.
+- age_user_overrides: "birth year(s)" rows of the Decisions sheet; read by 03b-age-grouping/deduce_birthyear.py.
 - user_group_overrides: political and age-"delete" rows of the Decisions sheet and the Gender report sheet;
-  read by 3a-grouping/grouping.py. Both sheets are rebuilt on every run.
+  read by 03a-grouping/grouping.py. Both sheets are rebuilt on every run.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 HERE = Path(__file__).resolve().parent
-GROUPING_DIR = HERE.parent / "3a-grouping"
+GROUPING_DIR = HERE.parent / "03a-grouping"
 AUDIT_PATH = HERE / "overlap_audit.xlsx"
 FLAIRS_PATH = GROUPING_DIR / "grouped_flairs.xlsx"
 BACKUP_DIR = GROUPING_DIR / "annotation_backup"

@@ -1,12 +1,12 @@
 This step turns the flair-based age information into birth years and splits the age data into groups.
-The input is ../3a-grouping/grouped_subreddit_data/age.jsonl: every age comment from step 3a, i.e. comments in the age subreddits whose flair is marked as processable on the "age" sheet of ../3a-grouping/grouped_flairs.xlsx (before January 2012, too, only comments with such a flair; the age group has no high-likelihood subreddits, see ../3a-grouping/notes.txt).
+The input is ../03a-grouping/grouped_subreddit_data/age.jsonl: every age comment from step 3a, i.e. comments in the age subreddits whose flair is marked as processable on the "age" sheet of ../03a-grouping/grouped_flairs.xlsx (before January 2012, too, only comments with such a flair; the age group has no high-likelihood subreddits, see ../03a-grouping/notes.txt).
 The age data is not split into groups in step 3a. All splitting happens here, in separate scripts, so that other groupings can be added later.
 
 Scripts, to be run in this order:
 1. deduce_birthyear.py
 2. group_by_generation.py
 3. group_by_age.py
-(2 and 3 are independent of each other.) The whole pipeline order is grouping.py (3a), derive_age_decisions.py and apply_decisions.py (../5-overlap-audit), deduce_birthyear.py, group_by_generation.py, group_by_age.py, and then cross_subreddit.py (step 4).
+(2 and 3 are independent of each other.) The whole pipeline order is grouping.py (3a), derive_age_decisions.py and apply_decisions.py (../05-overlap-audit), deduce_birthyear.py, group_by_generation.py, group_by_age.py, and then cross_subreddit.py (step 4).
 
 1. deduce_birthyear.py
 Adds the field "deduced_birthyear_range" to every comment of age.jsonl and writes the result to age.jsonl in this folder. The value is a list [first year, last year], or null if no birth year can be deduced.
@@ -42,4 +42,4 @@ Each group_by script writes an XLSX with one column per group, counting the comm
 
 Ensure you don't load the entire dataset into memory at once: the scripts read and write one line at a time.
 
-Output formats: jsonl as before. All output goes to this folder (3b-age-grouping).
+Output formats: jsonl as before. All output goes to this folder (03b-age-grouping).

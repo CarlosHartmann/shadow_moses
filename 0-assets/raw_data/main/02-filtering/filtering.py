@@ -32,7 +32,7 @@ from typing import Iterator
 HERE = Path(__file__).resolve().parent
 DEFAULT_INPUT = (
     HERE.parent
-    / "1-extraction_stage"
+    / "01-extraction_stage"
     / "second-attempt.jsonl"
 )
 DEFAULT_OUTPUT = HERE / "filtered_comments.jsonl"

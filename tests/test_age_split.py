@@ -7,7 +7,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1] / "0-assets" / "raw_data" / "main" / "3b-age-grouping"
+SCRIPT_DIR = Path(__file__).resolve().parents[1] / "0-assets" / "raw_data" / "main" / "03b-age-grouping"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 import group_by_age

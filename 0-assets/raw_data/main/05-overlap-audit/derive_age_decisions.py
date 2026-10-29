@@ -29,7 +29,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 HERE = Path(__file__).resolve().parent
-AGE_DIR = HERE.parent / "3b-age-grouping"
+AGE_DIR = HERE.parent / "03b-age-grouping"
 sys.path.insert(0, str(AGE_DIR))
 
 from age_split import majority_bucket  # noqa: E402

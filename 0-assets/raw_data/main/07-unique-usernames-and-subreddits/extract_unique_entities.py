@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 MAIN_DIRECTORY = Path(__file__).resolve().parent.parent
-OUTPUT_DIRECTORY = MAIN_DIRECTORY / "7-unique-usernames-and-subreddits"
+OUTPUT_DIRECTORY = MAIN_DIRECTORY / "07-unique-usernames-and-subreddits"
 AGE_GROUPS = ("age_silent", "age_boomer", "age_X", "age_millennial", "age_Z", "age_young", "age_old")
 OTHER_GROUPS = (
     "gender_male",
@@ -19,13 +19,13 @@ OTHER_GROUPS = (
 # cross-subreddit comments (4) and the reduced baseline (6). Intermediate files such as
 # the age.jsonl files and the unreduced baselines are not used.
 INPUT_FILES = (
-    *(MAIN_DIRECTORY / "3a-grouping" / "grouped_subreddit_data" / f"{g}.jsonl" for g in OTHER_GROUPS),
-    *(MAIN_DIRECTORY / "3b-age-grouping" / f"{g}.jsonl" for g in AGE_GROUPS),
+    *(MAIN_DIRECTORY / "03a-grouping" / "grouped_subreddit_data" / f"{g}.jsonl" for g in OTHER_GROUPS),
+    *(MAIN_DIRECTORY / "03b-age-grouping" / f"{g}.jsonl" for g in AGE_GROUPS),
     *(
-        MAIN_DIRECTORY / "4-cross-subreddit-data" / "cross_subreddit_data" / f"{g}.jsonl"
+        MAIN_DIRECTORY / "04-cross-subreddit-data" / "cross_subreddit_data" / f"{g}.jsonl"
         for g in (*AGE_GROUPS, *OTHER_GROUPS)
     ),
-    MAIN_DIRECTORY / "6-baseline-reduction" / "reduced_baseline.jsonl",
+    MAIN_DIRECTORY / "06-baseline-reduction" / "reduced_baseline.jsonl",
 )
 UNKNOWN_AUTHORS = {"[deleted]", "[removed]"}
 # The subreddit list already handed off to the indexing process (a copy of an earlier

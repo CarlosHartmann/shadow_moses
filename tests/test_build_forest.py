@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 SCRIPT_DIR = (
-    Path(__file__).resolve().parents[1] / "0-assets" / "raw_data" / "main" / "8-full-contexts" / "programmatic"
+    Path(__file__).resolve().parents[1] / "0-assets" / "raw_data" / "main" / "08-full-contexts" / "programmatic"
 )
 sys.path.insert(0, str(SCRIPT_DIR))
 

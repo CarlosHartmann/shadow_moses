@@ -16,7 +16,7 @@ from pathlib import Path
 from openpyxl import Workbook
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "4-cross-subreddit-data"))
+sys.path.insert(0, str(HERE.parent / "04-cross-subreddit-data"))
 
 from cross_subreddit import (  # noqa: E402
     AGE_DIR,

@@ -6,7 +6,7 @@ from pathlib import Path
 from openpyxl import Workbook
 
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1] / "0-assets" / "raw_data" / "main" / "3a-grouping"
+SCRIPT_DIR = Path(__file__).resolve().parents[1] / "0-assets" / "raw_data" / "main" / "03a-grouping"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 import grouping

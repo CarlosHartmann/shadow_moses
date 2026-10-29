@@ -15,8 +15,8 @@ from openpyxl import Workbook, load_workbook
 
 
 HERE = Path(__file__).resolve().parent
-GROUPED_DIR = HERE.parent / "3a-grouping" / "grouped_subreddit_data"
-AGE_DIR = HERE.parent / "3b-age-grouping"
+GROUPED_DIR = HERE.parent / "03a-grouping" / "grouped_subreddit_data"
+AGE_DIR = HERE.parent / "03b-age-grouping"
 # Files written by the 3b group_by scripts; both splits cover the same comments.
 AGE_GROUPS = (
     "age_silent",
@@ -28,8 +28,8 @@ AGE_GROUPS = (
     "age_old",
 )
 DEFAULT_BASELINE = GROUPED_DIR / "baseline.jsonl"
-GROUPED_FLAIRS_PATH = HERE.parent / "3a-grouping" / "grouped_flairs.xlsx"
-DEFAULT_FILTERED_INPUT = HERE.parent / "2-filtering" / "filtered_comments.jsonl"
+GROUPED_FLAIRS_PATH = HERE.parent / "03a-grouping" / "grouped_flairs.xlsx"
+DEFAULT_FILTERED_INPUT = HERE.parent / "02-filtering" / "filtered_comments.jsonl"
 DEFAULT_OUTPUT_DIR = HERE / "cross_subreddit_data"
 STATISTICS_START_YEAR = 2010
 AUTHOR_SELECTION_START = datetime(2012, 1, 1, tzinfo=timezone.utc).timestamp()
