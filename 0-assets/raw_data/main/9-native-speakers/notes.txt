@@ -1,4 +1,4 @@
-DRAFT (2026-10-27), written before the full user histories arrived. To be revised once they are here.
+Rules drafted 2026-10-27; the scan of the full histories was started 2026-10-28.
 
 This step labels every user in ../7-unique-usernames-and-subreddits/unique_usernames.txt as "confirmed L1" (English is a native language), "confirmed L2" (English is not a native language) or "ambiguous". The labels are only used in the parts of the study that compare L1 and L2 use of English. No user is filtered out because of this step; ambiguous users stay in all other analyses.
 It runs in two stages:
@@ -20,14 +20,18 @@ Prior work:
 - Gjurković et al. (2021), "PANDORA Talks" (SocialNLP): Reddit age, gender and location came mainly from flairs (annotated by hand) plus a few comment-level self-reports ("I'm 18 years old").
 No published work was found that extracts native language from comment text with regex. The closest is the flair-based approach of Reddit-L2.
 
-Input: the full comment histories of all users (format to be confirmed; assumed to be the same JSONL fields as the earlier steps: author, body, subreddit, created_utc, name/id, author_flair_text).
+Input: the full comment and submission histories of all users in ../7-unique-usernames-and-subreddits/unique_usernames.txt (the "OP sayer histories", user list hash 7288fa75135a), one JSONL file per month and stream, with the same fields as the earlier steps:
+- /Volumes/Limbo/reddit-OPsayerhistories/{comments,submissions}: 2005-06 to 2021-05, uncompressed .jsonl
+- /Volumes/dissertationhorse/OP_sayer_histories/{comments,submissions}: 2021-06 to 2022-12, .jsonl.zst
+Together 205 comment files (2005-12 to 2022-12) and 211 submission files (2005-06 to 2022-12), every month exactly once: about 3.0 billion comments and 0.11 billion submissions, 4.5 TB uncompressed. All authors in them are on the user list. The staging copies in /Volumes/dissertationhorse/limbo_backup_staging (compressed Limbo files on their way to the NAS) are not read.
+For comments the text is the body; for submissions the title plus the selftext. Bodies and selftexts that are [deleted] or [removed] are not matched, and items by [deleted] or [removed] authors are skipped.
 
-Preprocessing of each comment body:
+Preprocessing of each text:
 - html.unescape (bodies contain &gt;, &amp;, ...).
 - Remove quoted lines (lines starting with ">"): they are someone else's words.
 - Match case-insensitively, but keep the original text. A few rules only accept a capitalised word (e.g. the language after "I speak", the place after "here in").
 
-The rules are in patterns.py (RULES; clean() and find() show how to apply them). Each rule has an ID, a category and trigger substrings. A rule only runs if one of its triggers occurs in the lowercased comment, which makes matching several times faster (about 10,000 comments per second on one core with all rules). Most rules capture the next 1-6 words (up to the first punctuation mark) as "value", since a single token cuts off "the United Kingdom", "New Zealand" or "rural Ontario".
+The rules are in patterns.py (RULES; clean() and find() show how to apply them). Each rule has an ID, a category and trigger substrings. A rule only runs if one of its triggers occurs in the lowercased comment, which makes matching several times faster. Each distinct trigger is looked up once per comment. With JSON parsing, one process scans about 27,000 history comments per second (they are shorter than the OP comments of the earlier steps). Most rules capture the next 1-6 words (up to the first punctuation mark) as "value", since a single token cuts off "the United Kingdom", "New Zealand" or "rural Ontario".
 
 A: explicit statements about native language
 A1 "my native/first/mother/home language/tongue is X", "my L1 is X"
@@ -83,10 +87,18 @@ Left out on purpose: "sorry for any (spelling) mistakes". In the samples, it cam
 Besides the regex hits, the only other evidence collected are the flairs: all distinct (subreddit, author_flair_text) pairs per user. Country flairs (r/europe, r/AskEurope, r/soccer, national subreddits etc.; the method of Reddit-L2) and language flairs (e.g. in language-learning subreddits, listing native and learned languages) are the useful ones. A country flair can mean origin or residence, so it is treated like a residence statement.
 Not used: the share of a user's comments in other languages (it would also flag motivated learners of other languages and favour monolingual English speakers) and the subreddits a user comments in (not informative enough on their own).
 
-Output (proposed):
-- hits.jsonl: one row per hit: author, comment name (t1_...), subreddit, created_utc, rule ID, category, matched text, captured value, and the sentence around the match (about 200 characters each side).
-- user_evidence.jsonl: one row per user with their hits (up to 10 per rule, with A and B rules first and the rest spread over time) and distinct flairs. This is what the LLM gets. Users with no hits and no flairs are not sent to the LLM and are labelled "ambiguous" directly.
-- labels.jsonl: per user the label (confirmed L1 / confirmed L2 / ambiguous), the comment names the decision rests on, and a one-sentence reason from the LLM.
+Scan (scan_histories.py): one SQLite database, evidence/evidence.sqlite3 (gitignored, like the log files next to it), so that all evidence for one user can be looked up at once for annotation. Tables:
+- users (author, comments, submissions, first_utc, last_utc): how much history each user has.
+- flairs (author, subreddit, flair, n, first_utc, last_utc): every distinct flair of a user per subreddit, how often it was seen and when.
+- rule_counts (author, rule, n): how often each rule matched the user's texts (all matches).
+- hits (author, rule, h, name, subreddit, created_utc, value, context): the matches themselves. name is the comment (t1_) or submission (t3_) ID; value is the captured group; context is the cleaned text around the match, up to 200 characters on each side, with the match marked as ⟦...⟧. Per user and rule, only a sample is kept: up to 20 hits for the frequent, weak rules (A10, B5, C1, C2, C3, C4, C6, C7, C8, C9, D1) and up to 50 for all others (which almost never reach that). The sample is the hits with the smallest hash h of comment ID, rule and match position. This makes it a random sample, spread over the user's whole history, that does not depend on the order in which the files were scanned.
+- files: the scan's progress per input file; meta: the settings of the run (a hash of patterns.py, the sample sizes, the context length). A run cannot be resumed with different settings.
+A projection from the first test was about 4-7 GB for the database (users about 30 bytes per row, flairs about 65, hits about 340).
+
+Running it: from the repository root, nohup nice -n 15 caffeinate -ims python3 0-assets/raw_data/main/9-native-speakers/scan_histories.py run --workers 3. It reports progress every minute to the console and to evidence/scan.log: files and GB done, lines per second, database size and its projected final size, free space and ETA. Errors go to evidence/stderr.log when run with nohup as above. The scan commits its progress after every 1 million lines of a file, so it can be stopped at any time and resumed by running the same command again. Ctrl-C (or kill) lets the workers finish their current chunk first; a second Ctrl-C stops at once and only loses the chunks in progress. It also stops by itself if less than 10 GB are free on the output disk. --output DIR puts the database elsewhere (e.g. on dissertationhorse); --workers changes the number of worker processes (also between resumes). "scan_histories.py status" prints the progress of the saved run, and "scan_histories.py show USER" prints all evidence for one user (activity, flairs, rule counts and sampled hits in time order).
+A test on 430k real lines, scanned once straight through and once with a Ctrl-C to the whole process group and a kill to the main process with resumes in between, gave identical databases.
+
+Next step (to do): the annotation. Users with no hits and no flairs are labelled "ambiguous" directly. For the others, the LLM gets what "show" prints (with at most 10 hits per rule) and returns per user the label (confirmed L1 / confirmed L2 / ambiguous), the comment and submission IDs its decision rests on, and a one-sentence reason. The labels go into a new table of the same database.
 
 Guidance for the LLM (to be turned into the prompt):
 - First decide for each hit whether it is the user talking about themselves. Statements about others ("OP is ESL"), negations, hypotheticals, jokes, role play and quotations do not count.

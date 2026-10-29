@@ -181,7 +181,8 @@ RULES = [
      r"|I\s*(?:['’]m|\s+am|\s+was|\s+have\s+been|['’]ve\s+been)\s+(?:(?:also|currently|now|still)\s+)?teaching)"
      r"\s+(?:(?-i:ESL|EFL)|English)\b(?:\s+(?:in|at)\s+" + SPAN + r")?|(?-i:\b(?:TEFL|TESOL|CELTA)\b)"),
 ]
-COMPILED = [(rid, cat, trig, re.compile(p, re.IGNORECASE)) for rid, cat, trig, p in RULES]
+COMPILED = [(rid, cat, frozenset(trig), re.compile(p, re.IGNORECASE)) for rid, cat, trig, p in RULES]
+TRIGGERS = sorted({t for _, _, trig, _ in RULES for t in trig})
 
 QUOTE_LINE = re.compile(r"^\s*>.*$", re.MULTILINE)
 
@@ -193,10 +194,12 @@ def clean(body: str) -> str:
 
 def find(text: str) -> Iterator[tuple[str, str, re.Match, str]]:
     # Yields (rule id, category, match, captured value). A rule only runs if one of its
-    # trigger substrings occurs in the comment, which makes matching about six times faster.
+    # trigger substrings occurs in the comment, which makes matching several times faster.
+    # Each distinct trigger is looked up once per comment, not once per rule.
     low = text.lower()
+    present = {t for t in TRIGGERS if t in low}
     for rid, cat, trig, rx in COMPILED:
-        if trig and not any(t in low for t in trig):
+        if trig and trig.isdisjoint(present):
             continue
         for m in rx.finditer(text):
             g = {k: v for k, v in m.groupdict().items() if v}
