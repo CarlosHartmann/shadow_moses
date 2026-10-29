@@ -23,10 +23,15 @@ letters, digits and spaces only), or more than half are shorter than 25 characte
 Discussions whose submission is not in the dumps (2,554 threads) are discarded too. Both kinds are
 listed with the reason.
 
-Inputs: work/forest/ (build_forest.py), work/texts/ (texts_to_parquet.py).
+Bots and templates (detect_bots.py; decision of 2026-10-29): study comments by bot accounts and
+template comments are not study comments any more; they stay in the texts as context, and bot
+accounts are marked "(bot)". Discussions left without study comments are discarded. The excluded
+study comments are listed in excluded_study_comments.tsv.
+
+Inputs: work/forest/ (build_forest.py), work/texts/ (texts_to_parquet.py), work/bots/ (detect_bots.py).
 Outputs in work/discussions/: part-NNNN.parquet (one per forest bucket, one row per discussion
-with its text), discarded/part-NNNN.tsv and, at the end, all of those in discarded.tsv. Finished
-buckets are skipped on a rerun.
+with its text); discarded/ and excluded/ per bucket, and at the end all of them in discarded.tsv
+and excluded_study_comments.tsv. Finished buckets are skipped on a rerun.
 Show one discussion: render_discussions.py --show t1_xxxxxxx
 """
 
@@ -51,6 +56,7 @@ JOKE_DUPLICATES, JOKE_SHORT, SHORT = 0.3, 0.5, 25
 KEEP_ABOVE, KEEP_REPLIES, KEEP_CONTEXT = 20, 20, 20
 MAX_POST_AUTHOR_COMMENTS = 50
 DELETED = (None, "", "[deleted]")
+BOTS: set[str] = set()  # bot accounts from detect_bots.py, loaded in main()
 
 SCHEMA = pa.schema([
     ("discussion_id", pa.string()), ("link_id", pa.string()), ("subreddit", pa.string()),
@@ -107,6 +113,8 @@ def who(row: dict, post_author: str | None) -> str:
     parts = [f"u/{author}" if author != "[deleted]" else "[deleted]"]
     if post_author not in DELETED and author == post_author:
         parts.append("(the post's author)")
+    if author in BOTS:
+        parts.append("(bot)")
     if row.get("distinguished") == "moderator":
         parts.append("(moderator)")
     if flair(row):
@@ -299,10 +307,16 @@ def main() -> None:
     buckets = int((forest / "rows_by_bucket" / "_buckets.txt").read_text())
     by_bucket = w / "texts_by_bucket"
     split_texts(con, w / "texts", by_bucket, buckets)
+    BOTS.update(author for (author,) in con.execute(
+        f"SELECT author FROM read_csv('{w / 'bots' / 'bot_accounts.tsv'}', delim='\t', header=true)").fetchall())
+    templates = {i for (i,) in con.execute(
+        f"SELECT id FROM read_parquet('{w / 'bots' / 'template_comments.parquet'}')").fetchall()}
+    log(f"{len(BOTS):,} bot accounts, {len(templates):,} template comments")
     args.out_dir.mkdir(parents=True, exist_ok=True)
     todo = [b for b in range(buckets) if not (args.out_dir / f"part-{b:04d}.parquet").exists()]
     log(f"{buckets} buckets, {buckets - len(todo)} already done, {len(todo)} to render")
     (args.out_dir / "discarded").mkdir(exist_ok=True)
+    (args.out_dir / "excluded").mkdir(exist_ok=True)
     started, written = time.monotonic(), 0
     for number, bucket in enumerate(todo, start=1):
         part = f"part-{bucket:04d}.parquet"
@@ -319,25 +333,38 @@ def main() -> None:
             post = posts.get(c["link_id"])
             if post and post["author"] not in DELETED and c["author"] == post["author"]:
                 post_author_rows[c["link_id"]].append(c)
-        rows, discarded = [], []
+        rows, discarded, excluded = [], [], []
         for discussion in discussions:
             post = posts.get(discussion["link_id"])
             own = members[discussion["discussion_id"]]
+            original = [m["id"] for m in own if m["is_seed"]]
+            for m in own:
+                if m["is_seed"]:
+                    if (comments.get(m["id"]) or {}).get("author") in BOTS:
+                        cause = "bot account"
+                    elif m["id"] in templates:
+                        cause = "template comment"
+                    else:
+                        continue
+                    m["is_seed"] = False
+                    excluded.append(f"t1_{to_base36(m['id'])}\t{discussion['discussion_id']}\t{cause}\n")
             reason = None
             if post is None:
                 reason = "submission not in the dumps"
             elif is_heavy(discussion) and is_joke_like(own, comments):
                 reason = "joke-like heavy discussion"
+            elif not any(m["is_seed"] for m in own):
+                reason = "only bot or template study comments"
             if reason:
-                seeds = [m["id"] for m in own if m["is_seed"]]
                 discarded.append(f"{discussion['discussion_id']}\tt3_{to_base36(discussion['link_id'])}\t"
-                                 f"{','.join('t1_' + to_base36(s) for s in seeds)}\t{reason}\n")
+                                 f"{','.join('t1_' + to_base36(s) for s in original)}\t{reason}\n")
                 continue
             rows.append(build_discussion(discussion, post, members[discussion["discussion_id"]], comments,
                                          post_author_rows[discussion["link_id"]]))
         temporary = args.out_dir / f".{part}.tmp"
         pq.write_table(pa.Table.from_pylist(rows, schema=SCHEMA), temporary, compression="zstd")
         (args.out_dir / "discarded" / f"part-{bucket:04d}.tsv").write_text("".join(discarded))
+        (args.out_dir / "excluded" / f"part-{bucket:04d}.tsv").write_text("".join(excluded))
         temporary.rename(args.out_dir / part)
         written += len(rows)
         elapsed = time.monotonic() - started
@@ -348,6 +375,10 @@ def main() -> None:
     with open(args.out_dir / "discarded.tsv", "w") as handle:
         handle.write("discussion_id\tlink_id\tstudy_comments\treason\n")
         for path in sorted((args.out_dir / "discarded").glob("part-*.tsv")):
+            handle.write(path.read_text())
+    with open(args.out_dir / "excluded_study_comments.tsv", "w") as handle:
+        handle.write("study_comment\tdiscussion_id\treason\n")
+        for path in sorted((args.out_dir / "excluded").glob("part-*.tsv")):
             handle.write(path.read_text())
     log("done")
 

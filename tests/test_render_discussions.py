@@ -61,6 +61,13 @@ class RenderTests(unittest.TestCase):
         keep = rd.prune(1, parent_of, {}, [50])
         self.assertEqual(keep, {1} | set(range(30, 52)))
 
+    def test_bot_accounts_are_marked(self):
+        rd.BOTS.add("helperbot")
+        try:
+            self.assertIn("u/helperbot (bot)", rd.who({"author": "helperbot"}, "poster"))
+        finally:
+            rd.BOTS.discard("helperbot")
+
 
 if __name__ == "__main__":
     unittest.main()
