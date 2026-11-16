@@ -1,4 +1,4 @@
-"""Step 6 of the forest recon: the discussions as readable text, like the files in ../manual/.
+"""Step 6 of the forest recon: the discussions as readable text.
 
 Each discussion becomes one text:
 - the post: subreddit, author with flair, time, title, content (or link);
@@ -6,19 +6,21 @@ Each discussion becomes one text:
 - the discussion: the initial mention and everything below it, all branches, in thread order
   (depth first, replies by time);
 - at the end, the post author's other comments in the thread that were posted before the
-  discussion's last study comment (what its speakers could have seen), the earliest 50 at most.
+  discussion's last study comment (what its speakers could have seen), the earliest 20 at most.
 Every comment is numbered and says which comment (or the post) it replies to, so the branching
 stays readable without indentation. The post's author is marked as such wherever they comment.
 Study comments (the seeds) are not marked in the text; their numbers are stored next to it.
 
-Heavy discussions (body above 250 comments or deeper than 50 levels, 3,307 of them) are pruned:
-the initial mention; for each study comment up to 20 comments above it and its first 20 replies;
-the top of the context chain and its last 20 comments. A note gives the number left out. They
-are real discussions, not counting games (notes.txt), so they are kept.
-
-Heavy discussions that look like joke or novelty chains are dropped (242; decision of
-2026-10-29): more than 30% of their body comments repeat another one (compared in lower case,
-letters, digits and spaces only), or more than half are shorter than 25 characters.
+Caps (decision of 2026-11-16, see notes.txt; stricter than the first ones of 2026-10-29):
+- Long discussions (more than 50 comments in context and body) are pruned: the initial mention;
+  for each study comment up to 10 comments above it and its first 10 replies; the top of the
+  context chain and its last 10 comments. A note gives the number left out.
+- Long texts are cut, with a note of how much: the post's content at 10,000 characters, comments
+  at 5,000, the post author's other comments at 1,500. Study comments are never cut.
+- Long discussions that look like joke or novelty chains are dropped: more than 30% of their body
+  comments repeat another one (compared in lower case, letters, digits and spaces only), or more
+  than half are shorter than 25 characters.
+- Discussions whose text is still longer than 40,000 characters are dropped.
 
 Discussions whose submission is not in the dumps (2,554 threads) are discarded too. Both kinds are
 listed with the reason.
@@ -51,10 +53,12 @@ import pyarrow.parquet as pq
 
 HERE = Path(__file__).resolve().parent
 DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
-HEAVY_BODY, HEAVY_DEPTH = 250, 50
+MAX_COMMENTS = 50  # context and body together; longer discussions are pruned
 JOKE_DUPLICATES, JOKE_SHORT, SHORT = 0.3, 0.5, 25
-KEEP_ABOVE, KEEP_REPLIES, KEEP_CONTEXT = 20, 20, 20
-MAX_POST_AUTHOR_COMMENTS = 50
+KEEP_ABOVE, KEEP_REPLIES, KEEP_CONTEXT = 10, 10, 10
+MAX_POST_AUTHOR_COMMENTS = 20
+MAX_POST_CHARS, MAX_COMMENT_CHARS, MAX_POST_AUTHOR_CHARS = 10_000, 5_000, 1_500
+MAX_TEXT_CHARS = 40_000  # longer texts are dropped
 DELETED = (None, "", "[deleted]")
 BOTS: set[str] = set()  # bot accounts from detect_bots.py, loaded in main()
 
@@ -91,11 +95,13 @@ def plain(text) -> str:
     return html.unescape(text or "").strip()
 
 
-def quoted(text) -> str:
-    """Bodies in backticks, as in ../manual/: one for a single line, three for longer texts."""
+def quoted(text, limit: int | None = None) -> str:
+    """Bodies in backticks: one for a single line, three for longer texts. Cut at limit characters."""
     text = plain(text)
     if not text:
         return "(empty)"
+    if limit and len(text) > limit:
+        text = f"{text[:limit].rstrip()} [... cut here; {len(text) - limit:,} more characters]"
     if "\n" in text or "`" in text:
         return f"```{text}```"
     return f"`{text}`"
@@ -155,9 +161,11 @@ def prune(initial: int, parent_of: dict[int, int], times: dict[int, int], seeds:
 
 
 def render(discussion: dict, post: dict, context: list[dict], body: list[dict], comments: dict[int, dict],
-           post_author_comments: list[dict], note: str | None = None) -> tuple[str, dict[int, int], int, int]:
-    """context and body: the members to show, in order. Returns the text, the number given to each
-    comment id, and how many of the post author's other comments are shown and left out."""
+           post_author_comments: list[dict], note: str | None = None,
+           uncut: frozenset[int] = frozenset()) -> tuple[str, dict[int, int], int, int]:
+    """context and body: the members to show, in order; uncut: the study comments, shown in full.
+    Returns the text, the number given to each comment id, and how many of the post author's other
+    comments are shown and left out."""
     post_author = post.get("author")
     lines = [f"Discussion: {discussion['discussion_id']}",
              f"Post subreddit: {post.get('subreddit')}",
@@ -167,13 +175,13 @@ def render(discussion: dict, post: dict, context: list[dict], body: list[dict], 
     if post.get("is_self") is False and post.get("url"):
         lines.append(f"Link: {post['url']}")
     selftext = plain(post.get("selftext"))
-    lines.append(f"Content: {quoted(selftext)}" if selftext else "Content: No text.")
+    lines.append(f"Content: {quoted(selftext, MAX_POST_CHARS)}" if selftext else "Content: No text.")
     if note:
         lines += ["", note]
 
     numbers: dict[int, int] = {}
 
-    def entry(row: dict) -> list[str]:
+    def entry(row: dict, limit: int = MAX_COMMENT_CHARS) -> list[str]:
         numbers[row["id"]] = len(numbers) + 1
         parent = row.get("parent_id") or ""
         if parent.startswith("t3_"):
@@ -182,7 +190,7 @@ def render(discussion: dict, post: dict, context: list[dict], body: list[dict], 
             parent_number = numbers.get(int(parent[3:], 36)) if parent.startswith("t1_") else None
             target = f"to [{parent_number}]" if parent_number else "to a comment not shown"
         return [f"[{numbers[row['id']]}] {who(row, post_author)}, {when(row.get('created_utc'))}, reply {target}:",
-                quoted(row.get("body")), ""]
+                quoted(row.get("body"), None if row["id"] in uncut else limit), ""]
 
     def comment(member: dict) -> dict:
         return comments.get(member["id"]) or {
@@ -213,16 +221,19 @@ def render(discussion: dict, post: dict, context: list[dict], body: list[dict], 
         lines += [f"Other comments by the post's author, u/{post_author}, in the thread, posted before "
                   f"the last study comment ({len(shown)}, in time order{more}):", ""]
         for row in shown:
-            lines += entry(row)
+            lines += entry(row, MAX_POST_AUTHOR_CHARS)
     return "\n".join(lines).rstrip() + "\n", numbers, len(shown), len(others) - len(shown)
 
 
 def is_heavy(discussion: dict) -> bool:
-    return discussion["body_size"] > HEAVY_BODY or discussion["context_size"] + discussion["body_depth"] > HEAVY_DEPTH
+    return discussion["context_size"] + discussion["body_size"] > MAX_COMMENTS
 
 
 def is_joke_like(members: list[dict], comments: dict[int, dict]) -> bool:
     bodies = [(comments.get(m["id"]) or {}).get("body") or "" for m in members if m["role"] == "body"]
+    bodies = [b for b in bodies if b not in ("[deleted]", "[removed]")]  # moderation is not a joke
+    if not bodies:
+        return False
     normalised = [re.sub(r"[^a-z0-9 ]", "", b.lower()).strip() for b in bodies]
     duplicates = 1 - len(set(normalised)) / len(bodies)
     short = sum(len(b) < SHORT for b in bodies) / len(bodies)
@@ -257,7 +268,8 @@ def build_discussion(discussion, post, members, comments, post_author_rows):
     last_seed_time = max((times.get(s) or 0) for s in seeds)
     earlier = [r for r in post_author_rows if (r.get("created_utc") or 0) < last_seed_time]
     text, numbers, shown, left_out = render(discussion, post, [by_id[c] for c in context_ids],
-                                            [by_id[c] for c in order], comments, earlier, note)
+                                            [by_id[c] for c in order], comments, earlier, note,
+                                            frozenset(seeds))
     return {
         "discussion_id": discussion["discussion_id"], "link_id": "t3_" + to_base36(discussion["link_id"]),
         "subreddit": post.get("subreddit"),
@@ -354,15 +366,19 @@ def main() -> None:
             if post is None:
                 reason = "submission not in the dumps"
             elif is_heavy(discussion) and is_joke_like(own, comments):
-                reason = "joke-like heavy discussion"
+                reason = "joke-like long discussion"
             elif not any(m["is_seed"] for m in own):
                 reason = "only bot or template study comments"
             if reason:
                 discarded.append(f"{discussion['discussion_id']}\tt3_{to_base36(discussion['link_id'])}\t"
                                  f"{','.join('t1_' + to_base36(s) for s in original)}\t{reason}\n")
                 continue
-            rows.append(build_discussion(discussion, post, members[discussion["discussion_id"]], comments,
-                                         post_author_rows[discussion["link_id"]]))
+            row = build_discussion(discussion, post, own, comments, post_author_rows[discussion["link_id"]])
+            if len(row["text"]) > MAX_TEXT_CHARS:
+                discarded.append(f"{discussion['discussion_id']}\tt3_{to_base36(discussion['link_id'])}\t"
+                                 f"{','.join('t1_' + to_base36(s) for s in original)}\ttext too long\n")
+                continue
+            rows.append(row)
         temporary = args.out_dir / f".{part}.tmp"
         pq.write_table(pa.Table.from_pylist(rows, schema=SCHEMA), temporary, compression="zstd")
         (args.out_dir / "discarded" / f"part-{bucket:04d}.tsv").write_text("".join(discarded))

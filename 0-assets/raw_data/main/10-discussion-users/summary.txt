@@ -1,16 +1,48 @@
-Authors in the discussions: 2,493,598 additional, 665,149 baseline (study users of the groups and bot accounts left out).
-Their comments in group subreddits: 1,646,503.
+Run of 2026-11-16 21:17 UTC.
+Authors in the discussions: 2,331,295 additional, 664,984 baseline (study users of the groups and bot accounts left out).
+Their comments in group subreddits: 1,636,115.
 
-group	additional users admitted	baseline users admitted	users with only new flairs	new flair combinations
-age	30,823	2,540	4,712	5,244
-gender_male	5,310	1,298	4,439	4,867
-gender_female	5,002	1,104	4,742	5,163
-political_conservative	732	244	903	912
-political_progressive	955	281	2,795	2,913
-gender_political_conservative	170	22	2,663	2,749
-gender_political_progressive	1,250	200	3,308	3,521
+Final groups: users, and their comments shown in the discussions (of which with "OP")
+group	found through an OP comment	moved from the baseline	found in the discussions
+age_X	1,794 users, 223,334 comments (119,487)	217 users, 6,628 comments (838)	765 users, 5,839 comments (153)
+age_Z	36,556 users, 1,024,827 comments (508,819)	1,600 users, 20,236 comments (2,739)	25,399 users, 147,138 comments (826)
+age_boomer	263 users, 35,931 comments (18,837)	29 users, 776 comments (98)	104 users, 726 comments (8)
+age_millennial	7,816 users, 616,328 comments (316,714)	684 users, 16,976 comments (2,303)	3,600 users, 27,579 comments (454)
+age_old	2,080 users, 264,583 comments (140,730)	249 users, 7,817 comments (971)	878 users, 6,596 comments (161)
+age_silent	12 users, 1,696 comments (853)	1 users, 69 comments (12)	4 users, 20 comments (0)
+age_young	44,372 users, 1,641,155 comments (825,533)	2,284 users, 37,212 comments (5,042)	28,999 users, 174,717 comments (1,280)
+baseline	660,478 users, 5,619,180 comments (1,402,025)	-	-
+gender_female	9,989 users, 846,269 comments (432,659)	1,093 users, 31,379 comments (5,171)	4,912 users, 37,101 comments (877)
+gender_male	12,901 users, 1,203,990 comments (616,453)	1,287 users, 31,153 comments (4,199)	5,230 users, 40,311 comments (698)
+gender_political_conservative	1,223 users, 152,990 comments (64,727)	22 users, 1,154 comments (83)	170 users, 3,456 comments (100)
+gender_political_progressive	3,853 users, 263,756 comments (122,928)	200 users, 6,655 comments (811)	1,246 users, 10,817 comments (248)
+political_conservative	1,226 users, 142,205 comments (62,838)	239 users, 7,340 comments (808)	719 users, 7,594 comments (146)
+political_progressive	2,376 users, 309,405 comments (140,758)	276 users, 10,736 comments (1,167)	941 users, 12,164 comments (262)
 
-Admitted to at least one group: 41,000 additional, 5,119 baseline.
-Admitted to opposing groups of one family: 43.
-Age users without a deducible birth year: 6.
-Distinct new subreddit and flair combinations: 8,571 in 82 subreddits.
+Baseline users moved out of the baseline: 5,119 (23 of them into no group: a conflict or no birth year).
+Conflicts: 134 (conflicts.tsv).
+
+Comments shown in the discussions by users of the groups, per year
+year	found through an OP comment	added by this step	increase
+2010	13,626	3,529	25.9%
+2011	42,803	12,552	29.3%
+2012	110,727	9,930	9.0%
+2013	261,394	20,882	8.0%
+2014	391,436	29,546	7.5%
+2015	415,489	31,643	7.6%
+2016	387,877	28,991	7.5%
+2017	375,539	24,329	6.5%
+2018	427,657	30,503	7.1%
+2019	601,144	67,748	11.3%
+2020	605,778	71,052	11.7%
+2021	402,782	55,636	13.8%
+
+Annotation of new_flairs.xlsx
+sheet	combinations	relevant	checked, not relevant	annotated without a gap down to gain
+age	5,222	0	0	-
+gender_male	4,851	0	0	-
+gender_female	5,139	0	0	-
+political_conservative	908	0	0	-
+political_progressive	2,900	0	0	-
+gender_political_conservative	2,732	0	0	-
+gender_political_progressive	3,523	0	0	-

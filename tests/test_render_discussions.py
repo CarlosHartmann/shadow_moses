@@ -60,7 +60,14 @@ class RenderTests(unittest.TestCase):
         parent_of = {c: c - 1 for c in range(2, 61)}
         parent_of[1] = 0
         keep = rd.prune(1, parent_of, {}, [50])
-        self.assertEqual(keep, {1} | set(range(30, 52)))
+        self.assertEqual(keep, {1} | set(range(40, 52)))
+
+    def test_long_texts_are_cut_but_study_comments_are_not(self):
+        long = "word " * 2000
+        self.comments[3]["body"] = self.comments[5]["body"] = long
+        text = rd.build_discussion(self.discussion, POST, self.members, self.comments, [])["text"]
+        self.assertEqual(text.count("[... cut here; 4,999 more characters]"), 1)  # 3 is cut, 5 is a study comment
+        self.assertIn(long.strip() + "`", text)
 
     def test_bot_accounts_are_marked(self):
         rd.BOTS.add("helperbot")

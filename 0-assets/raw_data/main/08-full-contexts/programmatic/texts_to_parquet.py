@@ -2,7 +2,8 @@
 
 The otacon extraction (otacon_output/, see ../../../../otacon past_commands/forest_text_extraction/
 REPORT.md) holds the original JSON lines of all discussion comments, the submissions and the
-submitters' comments, one NDJSON file per dump file. Their fields differ between years (e.g.
+submitters' comments, one NDJSON file per dump file (compressed to .ndjson.zst afterwards by
+compress_otacon_output.zsh; both forms are read). Their fields differ between years (e.g.
 created_utc as a string in early dumps, author_flair_richtext only from 2019), so they are
 normalised here into one schema per kind:
 
@@ -19,6 +20,7 @@ file; finished files are skipped on a rerun.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -27,6 +29,7 @@ from pathlib import Path
 
 import pyarrow as pa
 import pyarrow.parquet as pq
+import zstandard
 
 HERE = Path(__file__).resolve().parent
 ROWS_PER_GROUP = 200_000
@@ -80,12 +83,19 @@ def normalise(kind: str, d: dict) -> dict:
     return row
 
 
+def open_lines(source: Path):
+    if source.suffix == ".zst":
+        reader = zstandard.ZstdDecompressor(max_window_size=2**31).stream_reader(open(source, "rb"))
+        return io.TextIOWrapper(reader, encoding="utf-8")
+    return open(source, encoding="utf-8")
+
+
 def convert(source: Path, target: Path) -> int:
     kind = source.name[:2]
     schema = SCHEMAS[kind]
     temporary = target.with_name(f".{target.name}.tmp")
     rows, count = [], 0
-    with open(source, encoding="utf-8") as lines, pq.ParquetWriter(temporary, schema, compression="zstd") as writer:
+    with open_lines(source) as lines, pq.ParquetWriter(temporary, schema, compression="zstd") as writer:
         for line in lines:
             rows.append(normalise(kind, json.loads(line)))
             if len(rows) == ROWS_PER_GROUP:
@@ -108,8 +118,9 @@ def main() -> None:
     jobs = []
     for kind in ("RS", "RC"):
         (args.out_dir / kind).mkdir(parents=True, exist_ok=True)
-        for source in sorted((args.source / kind).glob(f"{args.files}.ndjson")):
-            target = args.out_dir / kind / f"{source.stem}.parquet"
+        sources = [*(args.source / kind).glob(f"{args.files}.ndjson"), *(args.source / kind).glob(f"{args.files}.ndjson.zst")]
+        for source in sorted(sources):
+            target = args.out_dir / kind / f"{source.name.split('.')[0]}.parquet"
             if not target.exists():
                 jobs.append((source, target))
     jobs.sort(key=lambda job: -job[0].stat().st_size)  # largest first, for an even finish
