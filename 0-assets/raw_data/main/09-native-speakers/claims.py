@@ -14,6 +14,8 @@ A claim is (kind, detail). Kinds:
   - child_en       grew up with English ("I grew up speaking English", "English-speaking household").
   - child_other    grew up with another language; detail = the language.
   - heritage       family from elsewhere, child of immigrants, second generation, parents speak no English.
+  - immig_family   (with heritage) the family immigrated to where the user grew up: child of immigrants, second
+                   or first generation, Latina, German-American. Mostly said in English-speaking countries.
   - immigrant      the user moved between countries (immigrant, expat, refugee, green card, "my home country").
   Place (detail = "CLASS:country", class from places.py)
   - origin         from, born, grew up, "back home in", "native Texan", "my hometown is".
@@ -325,8 +327,8 @@ def b11(low, value, before, after, sub):
 # --- C: origin and residence ---
 
 def c1(low, value, before, after, sub):
-    if re.search(r"\bnot\b", low):
-        return []
+    if re.search(r"\bnot\b", low) or re.match(r"we(?:'re| are) all\b", low):
+        return []                          # "We are all from Syria on this blessed day"
     if low.startswith("my "):              # my parents are from ...
         found = places.locate(value, after)
         return [("heritage", "")] if found and found[2] in ("NON", "OUT") else []
@@ -372,7 +374,7 @@ def c5(low, value, before, after, sub):
     if low.startswith("as ") and (not AS_SELF.match(after) or THIRD_PERSON.search(before)):
         return []                          # "dying to a gun as a foreigner", "she went abroad as an exchange student"
     if re.search(r"second|2nd|generation", low):
-        return [("heritage", "")]
+        return [("heritage", ""), ("immig_family", "")]
     return [("immigrant", "")]
 
 
@@ -407,11 +409,11 @@ def c8(low, value, before, after, sub):
     hyphenated = re.match(r"\s*-?\s*(american|canadian|australian|british)\b", after, re.I)
     if hyphenated:                         # German(-)American, Hispanic American: heritage, and the nationality
         country = places.locate(hyphenated[1])
-        return ([("heritage", "")] if found and found[2] != "ENG" else []) + [("nation", f"ENG:{country[1]}")]
+        return ([("heritage", ""), ("immig_family", "")] if found and found[2] != "ENG" else []) + [("nation", f"ENG:{country[1]}")]
     if re.search(r"\bhalf\b", low):
         return [("heritage", "")] if found and found[2] != "ENG" else []   # half German
     if found and found[0] in ("hispanic", "latino", "latina"):
-        return [("heritage", "")]
+        return [("heritage", ""), ("immig_family", "")]
     if re.search(r"^(?:us|we)\b", low):  # "we Germans", "us Brits": only with a plural demonym
         if not low.endswith("s"):
             return []
@@ -439,12 +441,12 @@ def c10(low, value, before, after, sub):
 def c11(low, value, before, after, sub):
     found = places.locate(value) if value else None
     if found and found[2] == "ENG":           # "first-generation American": born there to immigrants
-        return [("heritage", ""), ("nation", f"ENG:{found[1]}")]
+        return [("heritage", ""), ("immig_family", ""), ("nation", f"ENG:{found[1]}")]
     if re.search(r"\b(?:first|1st)\s*-?\s*gen", low):
         return [("immigrant", "")]
     if re.match(r"(?:child|son|daughter|kid)\b", low) and not re.search(r"(?:\bi'?m|\bi am|\bas)\s+(?:an?\s+|the\s+)?$", before):
         return []                          # someone else is the child of immigrants
-    return [("heritage", "")]
+    return [("heritage", ""), ("immig_family", "")]
 
 
 # --- E: family and childhood ---
