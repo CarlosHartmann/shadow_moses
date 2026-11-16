@@ -1,0 +1,21 @@
+This step looks at the people in the discussions (step 8) who are not study users yet. The study users were found through comments containing "OP" (steps 2-4); the discussions also hold comments by others, who may refer to OP without writing "OP". If their flairs place them in one of the study groups, their language is data too. Bots are not: their accounts are known from step 8 (../08-full-contexts/programmatic/work/bots/bot_accounts.tsv) and left out.
+
+Decisions (2026-10-30):
+- Not yet annotated subreddit and flair combinations go into a separate workbook, new_flairs.xlsx, laid out like ../03a-grouping/grouped_flairs.xlsx. grouped_flairs.xlsx stays untouched until the annotations are merged.
+- Once an additional user qualifies for a group, all their comments in the discussions count for it (as in step 4), in any subreddit.
+- Baseline users are checked as well, and those whose flairs admit them to a group are reported (baseline_users_with_group_flairs.tsv), but not moved.
+
+Scripts
+1. discussion_users.py: for every author of a comment shown in the rendered discussions (../08-full-contexts/programmatic/work/discussions/, comment_ids), all their extracted comments in the group subreddits are checked with the rules of step 3a (subreddit lists, score filter, relevant flairs, pre-2012 high-likelihood rule, user_group_overrides; ../03a-grouping/grouping.py) and, for age, the birth-year deduction of step 3b (../03b-age-grouping/deduce_birthyear.py). Writes new_flairs.xlsx, baseline_users_with_group_flairs.tsv, summary.txt and, gitignored, data/discussion_users.parquet and data/admitted_comments.parquet. About 30 s.
+
+Evidence comes only from comments in the discussions' threads (all their extracted comments there, also those not shown in the texts), not from the users' whole histories.
+
+Results (2026-10-30), see summary.txt
+- 2,493,598 additional authors (no study comment, not a bot) and 665,149 baseline authors have comments in the discussions; 1,646,503 of their comments are in group subreddits.
+- Admitted to at least one group by the existing annotations: 41,000 additional users and 5,119 baseline users. By group (additional / baseline): age 30,823 / 2,540; gender_male 5,310 / 1,298; gender_female 5,002 / 1,104; political_conservative 732 / 244; political_progressive 955 / 281; gender_political_conservative 170 / 22; gender_political_progressive 1,250 / 200.
+- 43 users are admitted to opposing groups of one family (e.g. gender_male and gender_female); 6 age users have no deducible birth year.
+- New subreddit and flair combinations: 8,571 in 82 subreddits. As in grouped_flairs.xlsx, a combination appears on the sheet of every group whose list contains the subreddit, so the sheets have more rows than that (age 5,244, gender_male 4,867, gender_female 5,163, political_conservative 912, political_progressive 2,913, gender_political_conservative 2,749, gender_political_progressive 3,521). They are the only group evidence for about 4,000-5,000 users per gender and age group.
+
+Still to do
+2. Annotate new_flairs.xlsx (by hand), then merge it into grouped_flairs.xlsx and rerun discussion_users.py.
+3. Group assignment of the admitted users: the age groups through the birth-year ranges (generations and young/old as in step 3b), conflicts within a family (as in step 5), and per group the list of their comments in the discussions.

@@ -61,6 +61,7 @@ BOTS: set[str] = set()  # bot accounts from detect_bots.py, loaded in main()
 SCHEMA = pa.schema([
     ("discussion_id", pa.string()), ("link_id", pa.string()), ("subreddit", pa.string()),
     ("study_comments", pa.list_(pa.string())), ("study_numbers", pa.list_(pa.int32())),
+    ("comment_ids", pa.list_(pa.string())),  # the comment behind each number: [1] is comment_ids[0]
     ("comments_total", pa.int32()), ("comments_shown", pa.int32()), ("pruned", pa.bool_()),
     ("post_author_comments_shown", pa.int32()), ("post_author_comments_left_out", pa.int32()),
     ("text", pa.string()),
@@ -261,6 +262,7 @@ def build_discussion(discussion, post, members, comments, post_author_rows):
         "discussion_id": discussion["discussion_id"], "link_id": "t3_" + to_base36(discussion["link_id"]),
         "subreddit": post.get("subreddit"),
         "study_comments": ["t1_" + to_base36(s) for s in seeds], "study_numbers": [numbers[s] for s in seeds],
+        "comment_ids": ["t1_" + to_base36(c) for c, _ in sorted(numbers.items(), key=lambda item: item[1])],
         "comments_total": discussion["context_size"] + discussion["body_size"],
         "comments_shown": len(order) + len(context_ids), "pruned": heavy,
         "post_author_comments_shown": shown, "post_author_comments_left_out": left_out, "text": text,

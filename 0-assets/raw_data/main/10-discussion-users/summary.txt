@@ -1,0 +1,16 @@
+Authors in the discussions: 2,493,598 additional, 665,149 baseline (study users of the groups and bot accounts left out).
+Their comments in group subreddits: 1,646,503.
+
+group	additional users admitted	baseline users admitted	users with only new flairs	new flair combinations
+age	30,823	2,540	4,712	5,244
+gender_male	5,310	1,298	4,439	4,867
+gender_female	5,002	1,104	4,742	5,163
+political_conservative	732	244	903	912
+political_progressive	955	281	2,795	2,913
+gender_political_conservative	170	22	2,663	2,749
+gender_political_progressive	1,250	200	3,308	3,521
+
+Admitted to at least one group: 41,000 additional, 5,119 baseline.
+Admitted to opposing groups of one family: 43.
+Age users without a deducible birth year: 6.
+Distinct new subreddit and flair combinations: 8,571 in 82 subreddits.

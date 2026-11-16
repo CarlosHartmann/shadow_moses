@@ -52,6 +52,7 @@ class RenderTests(unittest.TestCase):
         self.assertIn("(1, in time order)", text)
         self.assertEqual(row["study_comments"], ["t1_2", "t1_5"])
         self.assertEqual(row["study_numbers"], [2, 4])
+        self.assertEqual(row["comment_ids"][:5], ["t1_1", "t1_2", "t1_3", "t1_5", "t1_4"])
         self.assertEqual((row["post_author_comments_shown"], row["pruned"]), (1, False))
 
     def test_prune_keeps_paths_to_seeds_and_their_first_replies(self):

@@ -1,0 +1,151 @@
+uid	author	gold	confidence	note	sampled_label	sampled_basis
+D001	rubzn	L2	sure	languagelearning flair: ru N, en C1	L2	other_l1
+D002	Ordep22	L2	sure	Portuguese, lives in Scotland	ambiguous	heritage
+D003	dimisdas	L2	likely	europe flair Greece; my country has 9-month military service; A5 hit is about others	ambiguous	insufficient
+D004	etmsphr	L1	sure	from Minnesota, American	L1	origin
+D005	DarkCloud_390	L1	sure	native English speaker who learned Mandarin	L2	other_l1
+D006	Thud2	L1	sure	native English speaker; US	L1	explicit
+D007	wellmade-mango	L2	sure	Serbian, from East Europe	L2	origin
+D008	sunflowersandyou	L1	sure	monolingual native English speaker, Michigan	L1	explicit
+D009	_DEUS-VULT_	L2	sure	Spanish first language, Uruguay	L2	explicit
+D010	Mauro697	L2	sure	Italy, in my language	L2	origin
+D011	toothless_tiger	ambiguous		first language Italian, first-generation American, English now main language: when English came is unclear	L2	other_l1
+D012	SpinsterCottage	L2	likely	I'm a Dane (twice), my country	L2	origin
+D013	MasterRiq	L1	likely	Toronto/Markham	L1	residence
+D014	Pepf	L2	sure	native Spanish speaker, Spaniard, not American	L2	other_l1
+D015	Doxep	L2	sure	Italian, English not first language	ambiguous	conflict
+D016	JACK_MCUBE_	L1	likely	from the UK	L1	origin
+D017	Feinyan	L2	sure	native Dutch, from the Netherlands	L2	other_l1
+D018	sohas	L2	likely	Armenian, foreigner in Germany	L2	origin
+D019	TaniaSams	L2	sure	Russian first language, born in Moscow	L2	other_l1
+D020	youarebritish	L1	sure	native English speaker, Ohio	ambiguous	conflict
+D021	Jojojo99pt	L2	sure	from Portugal	L2	origin
+D022	classyraven	L1	sure	monolingual, English mother tongue, Canadian	L1	explicit
+D023	Aditya1311	L1	likely	India: grew up bilingual, parents spoke English, English-only school	L2	explicit
+D024	DeeDeeMcGeeSon	L1	likely	Canadian	L1	origin
+D025	kionay	L1	sure	native English speaker, Indiana	L1	explicit
+D026	GlandyThunderbundle	L1	sure	native English speaker, American	L1	explicit
+D027	SilverSixRaider	L2	sure	mother tongue Spanish, Peruvian, moved to Canada	ambiguous	heritage
+D028	Nakkielz	L2	sure	French, hometown Marseille, not a native (English) speaker	L2	origin
+D029	TheAnalogKoala	L1	sure	native English speaker, grew up in Brooklyn, child of immigrants	L1	explicit
+D030	GO_DO_TWENTY_PUSHUPS	L1	likely	"lives in Australia, flair Adelaide; ""give back to this country"" hints at an immigrant"	L1	residence
+D031	beansnricesti	L1	sure	English is my first language; US	L1	explicit
+D032	ThatSpecialPlace	L1	likely	from Upstate NY; Puerto Rican/Latino ethnicity	ambiguous	insufficient
+D033	TotallyAwesomeIRL	L1	sure	from the Seattle area, American	ambiguous	insufficient
+D034	Fennbros	L1	sure	from Atlanta, American	L1	origin
+D035	Lovemesometoasts	L2	sure	English not first language, Malaysia	L2	explicit
+D036	GlassedSilver	L2	sure	native German speaker	L2	other_l1
+D037	CookieWaifu	L2	sure	native German	L2	other_l1
+D038	eX1D	L2	sure	Norwegian	L2	origin
+D039	treelets	L1	likely	"born and raised in LA, Filipina/Latina heritage; ""maybe my English is poor"" is rhetorical"	L2	explicit
+D040	Amorganskate	L1	sure	from Upstate NY, lives in Syracuse	L1	residence
+D041	xr6reaction	L2	sure	Dutch	L2	origin
+D042	pastpresentfuror	ambiguous		American from the Bronx, but grew up in Jamaica (outer circle)	ambiguous	insufficient
+D043	PantherEverSoPink	L1	likely	native English speaker, British; Punjabi home language until school start (UK)	L1	explicit
+D044	throwawayacc14248	L1	sure	from Michigan, American	L1	origin
+D045	Whitesushii	ambiguous		Singapore, native Chinese speaker who mostly converses in English	L2	other_l1
+D046	Aar0n_K	L1	likely	Chinese descent, born and raised in America	L1	residence
+D047	CorruptingTheSystem	L1	sure	Texan, America	L1	origin
+D048	crzagazeta	L2	sure	first language Spanish, English second, Peruvian immigrant	L2	explicit
+D049	yuktone12	L1	likely	we Americans, lived in many states	ambiguous	insufficient
+D050	onyx298	L1	likely	my country (New Zealand)	L1	origin
+D051	zz389	ambiguous		I'm Mexican (3x), lives in the Bay Area: immigrant or Mexican-American	ambiguous	heritage
+D052	GabMassa	L2	sure	Portuguese mother language, Brazil	ambiguous	conflict
+D053	a_cat_scat	L2	likely	from Germany (one hit)	L2	origin
+D054	MaxRavenclaw	L2	sure	Romanian native tongue, not a native (English) speaker, CPE	L2	other_l1
+D055	blackbird828	L1	likely	US (grandfather from Ireland, in the US 50+ years), tri-state area	L1	residence
+D056	psych0pomp	L1	sure	from Minnesota, lives in Houston	L1	origin
+D057	penismartin	L2	sure	English isn't my first language	L2	explicit
+D058	paddy_d_lfc	L1	likely	I'm a British (one hit)	L1	origin
+D059	juanlee337	ambiguous		contradictory: Russia, Japanese, Mexican, Korean, Texas; my English is bad; parents speak no English	L2	explicit
+D060	BlueBox32	L2	likely	English is my 3rd language, though from England/London	L2	explicit
+D061	sanereel	ambiguous		only an r/europe flair: Poland	ambiguous	insufficient
+D062	Friendly_Bug	L2	sure	native German speaker, Swiss	L2	other_l1
+D063	WeepyDonuts	L2	likely	Iraqi Christian, lived in Iraq most of life, now Detroit	ambiguous	heritage
+D064	popat2000	L2	sure	India, English was my second language (Hindi medium school)	L2	explicit
+D065	PartyDannyTanner	L1	sure	only speaks English, Minnesota	L1	explicit
+D066	fokusfocus	L2	sure	English second language, born and raised in Indonesia, immigrant in US	L2	explicit
+D067	dx5231	L2	sure	Brazil	L2	origin
+D068	Hotel_Arrakis	L1	likely	grew up in the US, German only with parents and English with everyone else	L2	explicit
+D069	dragonsdemesne	L1	likely	Edmonton, Canada	L1	residence
+D070	TallAmericano	L1	sure	from Indiana, American, Seattle	ambiguous	insufficient
+D071	koola1d702	L2	sure	Spanish first language, born and raised in Mexico, moved to US at 11	L2	other_l1
+D072	allthegoo	L1	likely	"grew up in Des Moines; ""in English we call it"""	L1	residence
+D073	gustriandos	L1	likely	lives in DC	L1	residence
+D074	witbeyond	L1	sure	only speaks English, grew up in a small US town with a white (adoptive) family	ambiguous	conflict
+D075	Spinnis	L2	sure	native Swedish speaker	L2	other_l1
+D076	Classic-Daikon-5448	L2	sure	from Australia but an immigrant, English is my 2nd language	L2	explicit
+D077	throwawaygang21	L1	likely	lives in AZ, here in the U.S.	L1	residence
+D078	editor_9	L1	likely	Los Angeles, SoCal	L1	residence
+D079	WatashiWaEruDesu	L2	sure	native Polish speaker	L2	other_l1
+D080	wandmirk	L1	sure	American (US Southerner), immigrant in the UK	ambiguous	insufficient
+D081	nliausacmmv	L1	sure	English is my first language (French from age six), Iowa	ambiguous	conflict
+D082	Sinjos	L1	sure	Canadian, Ontario	L1	origin
+D083	Ikasatak	L2	likely	native Tamil speaker from Tamil Nadu	L2	other_l1
+D084	yifftionary	L1	sure	wishes English weren't his native language (joke), Wisconsin, Midwesterner	L1	origin
+D085	billynomates1	L1	sure	native speaker, from Wales/UK, only speaks English	L1	explicit
+D086	jthack	L1	likely	from Kentucky, lives in Lexington (and Haiti)	L1	origin
+D087	Monroevian	L1	sure	English is my first language, Colorado	L1	explicit
+D088	lurking9	L2	sure	native German, Münster	L2	other_l1
+D089	GimmeDatGrimoire	L2	sure	English isn't my main language, Greek	L2	explicit
+D090	OOOOHHHYEAH	L2	sure	English not primary language, not native, Polish	L2	explicit
+D091	ifancytacos	L1	sure	"English is my first language, Seattle, American (""I'm French"" is a joke)"	L1	explicit
+D092	LGHTHD	L2	sure	Swedish, grew up in Lund, lived in the US 8 years	L2	origin
+D093	Jovan_Neph	L2	sure	not a native English speaker, Iraqi Kurd, Kurdish native	L2	explicit
+D094	OJSTheJuice	L2	sure	Czech	L2	origin
+D095	bahamuttu	L2	likely	from Vietnam (one hit), my country	L2	origin
+D096	soparamens	L2	sure	Spanish native, Mexican	ambiguous	conflict
+D097	Utipod	L1	sure	Indiana, we Americans	L1	residence
+D098	SentientCouch	L1	sure	native English speaker, grew up in Florida, ESL teacher in China	L1	explicit
+D099	Hikure	L1	sure	native speaker of English, America, Long Island	L1	explicit
+D100	FlipDog88	L1	sure	English is my first language	L1	explicit
+D101	Jonkinch	L1	likely	born in Chicago, grew up in Philly; Singapore until 4th grade; American	L1	origin
+D102	ladyglittersprkls	L1	likely	lives in SoCal, prior military	L1	residence
+D103	Hilomh	L1	sure	Oregon, American	L1	origin
+D104	fandette88	ambiguous		native Chinese, immigrant, lived in England as a poor immigrant, now Canadian in Ottawa	ambiguous	heritage
+D105	OGidlehands	L1	sure	from the U.S., born and raised in Puyallup	L1	origin
+D106	Catinthemirror	L1	sure	native English-speaking American, California	L1	explicit
+D107	madame_ray_	L1	sure	England, Nottingham, born and raised in Cumbria	L1	residence
+D108	merkur	L2	sure	native Spanish, from Spain	L2	other_l1
+D109	cavemanwithamonocle	L1	sure	Detroit area, American	L1	origin
+D110	bulldogwill	L1	likely	politics flair North Carolina, from NA	ambiguous	insufficient
+D111	A_Random_ninja	L1	likely	originally from Cincinnati, Ohio	ambiguous	insufficient
+D112	i3igNasty	L1	sure	from Iowa, American	L1	origin
+D113	eugenesbluegenes	L1	sure	native English speaker, Oakland, American	L1	explicit
+D114	IAMA_Printer_AMA	L1	sure	only speaks English, American, Denver	L1	explicit
+D115	DiligentShopping	L1	likely	from the UK/London, British Indian	L1	origin
+D116	otter111a	L1	sure	Buffalo, Maryland, American	ambiguous	insufficient
+D117	throwawayham1971	L1	sure	English is my first language, Chicago	L1	origin
+D118	SPARTANxb360	L1	likely	I only speak English (one hit)	L1	explicit
+D119	DevastatorTNT	L2	sure	native Italian, Italy	L2	other_l1
+D120	Fubbalicious	L1	likely	lives in California, Asian household	L1	residence
+D121	paperkutchy	L2	sure	English not first language, Portuguese	ambiguous	conflict
+D122	sslisa	L2	sure	Mexican, my English was basic	L2	explicit
+D123	a141abc	L2	sure	Spanish first language, Argentina	L2	explicit
+D124	vsync	L1	likely	Providence RI, Boston, Florida	L1	residence
+D125	Aehan	L2	sure	Swedish	L2	origin
+D126	gbeier	L1	sure	native English speaker, American, born in Chicago	ambiguous	conflict
+D127	JuiceMaker07	ambiguous		from the UAE but not Arab (probably an expat family)	L2	origin
+D128	joserayo	L2	sure	from Madrid, foreigner in NJ, not a native English speaker, Spanish at home	ambiguous	insufficient
+D129	corruptacolyte	ambiguous		first language was Spanish, no native proficiency in it: when English came is unclear	L2	other_l1
+D130	Mieshta	L2	likely	Bolivian, international student in the PNW	L2	origin
+D131	Shoopsta	L2	sure	Austrian, English not first language	L2	origin
+D132	PM_ME_YOUR_YAK	L1	likely	Italian first language, moved to the UK at two, Londoner; later expat	ambiguous	heritage
+D133	m0rsm0rtis	L1	likely	first language French but equally fluent in English, English school, New Brunswick	ambiguous	heritage
+D134	Juggadrezik	ambiguous		English isn't my native language, but from PA and Hispanic American	L2	explicit
+D135	frequenttimetraveler	L2	sure	Greek	L2	origin
+D136	Chevolvo	ambiguous		one residence hit (here in US)	ambiguous	insufficient
+D137	MrG1rafarig	L1	likely	"Arizona, America; ""English isn't my first language"" is parody (AmITheAngel); Greek/Australian family"	L2	explicit
+D138	6packabsinthe	ambiguous		lives on the east coast (one hit)	ambiguous	insufficient
+D139	TacitWinter64	ambiguous		lives in the south (one hit)	ambiguous	insufficient
+D140	Macadeemus	L1	sure	from the UK/Yorkshire, raised in England, British	L1	origin
+D141	jenniferlawrenceugIy	L1	likely	lives in San Francisco, before Portland	L1	residence
+D142	AngelOfLilies	L2	sure	German native, English second language	L2	other_l1
+D143	NijiRanger	L2	sure	flair: no N, nl H, en F; non-native English speaker	L2	explicit
+D144	kitkatsaremyweakness	L1	sure	grew up in SE Portland, lives in Portland	L1	residence
+D145	GonzoNoseBear	L2	likely	my country (Germany), one hit	L2	origin
+D146	lukaseder	L2	likely	Swiss, Zurich, in German we say	L2	origin
+D147	Nidis	L1	sure	English is my first language, Australian, regional Victoria	L1	explicit
+D148	bizm	L1	likely	from Corona CA, lives in San Diego	L1	residence
+D149	Rose_Scythe	L1	likely	here in NZ (several hits)	L1	residence
+D150	capnjngl	L1	likely	Portland, Oregon, US	L1	residence
