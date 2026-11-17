@@ -1,0 +1,28 @@
+Optional scripts. Nothing here is a step of the pipeline, and no step depends on anything here having been run.
+
+compress_large_files.py
+Saves disk space by compressing the largest files of the pipeline in place (zstd; NAME becomes NAME.zst). It changes nothing in the workflow: every script that reads one of these files opens it through ../shared/large_files.py, which takes the uncompressed file or its archive, whichever is there (the uncompressed one if both are). The scripts that write these files always write them uncompressed. So the script can be run before, between or after the steps, repeatedly, or never.
+
+Files it looks for (those not there are skipped):
+- 01-extraction_stage/second-attempt.jsonl (95 GB), read by step 2
+- 02-filtering/filtered_comments.jsonl (82 GB), read by steps 3a, 4 and 8 (prepare_ids.py)
+- 03a-grouping/grouped_subreddit_data/baseline.jsonl (80 GB), read by step 4
+- 04-cross-subreddit-data/cross_subreddit_data/baseline.jsonl (75 GB), read by step 6
+- 08-full-contexts/programmatic/otacon_output/RC and RS/*.ndjson (45 GB), read by step 8 (texts_to_parquet.py)
+
+Run: poetry run python 0-assets/raw_data/main/optional/compress_large_files.py (--dry-run lists what it would do).
+
+How it stays safe
+- A file is compressed to a temporary name; the archive is then decompressed again and compared with the original (SHA-256). Only after that does the archive get its name and the original is removed.
+- A file that changes while it is compressed (a step still writing it) is left as it is.
+- If a step is rerun and writes its file anew next to an old archive, the readers take the new file, and the next run of this script replaces the old archive.
+
+Decisions
+- 2026-11-16: zstd level 12. Measured on 300 MB pieces of filtered_comments.jsonl, level 19 makes the archive about a seventh smaller but takes about seven times as long; a long window (--long) gains nothing.
+- 2026-11-16: second-attempt.jsonl is included although the repo does not produce it (it is the otacon extraction of step 1): it is the largest file, and step 2 reads it in either form.
+- To add a file: put it in TARGETS and make every script that reads it use large_files.open_text() (or large_files.existing() for DuckDB, which reads .zst itself). tests/test_large_files.py checks each reader with both forms.
+
+Run of 2026-11-17
+- The four .jsonl files: 330.8 GB -> 46.7 GB (14%) in 53 min (second-attempt 94.78 -> 12.68 GB, filtered_comments 81.76 -> 11.81 GB, baseline of step 3a 79.53 -> 11.46 GB, baseline of step 4 74.74 -> 10.78 GB).
+- otacon_output had been compressed just before with the zstd command at level 19 (a one-off script, since removed): 45 GB -> 4.9 GB.
+- Checked afterwards on the archives: every otacon_output file has as many lines as its Parquet file in step 8 has rows, and one month converted again gives the identical table; filtered_comments.jsonl.zst has its 53,006,559 lines, read in Python and in DuckDB; step 6, run again from the compressed baseline, writes a sample identical to the existing reduced_baseline.jsonl.

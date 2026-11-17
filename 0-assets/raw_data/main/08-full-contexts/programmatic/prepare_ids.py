@@ -12,6 +12,7 @@ Both are written to the work directory (default: work/ next to this script, giti
 from __future__ import annotations
 
 import argparse
+import sys
 import time
 from pathlib import Path
 
@@ -19,6 +20,8 @@ import duckdb
 
 HERE = Path(__file__).resolve().parent
 MAIN = HERE.parents[1]
+sys.path.insert(0, str(MAIN / "shared"))
+import large_files  # noqa: E402  (finds a large input as it is or as its .zst archive)
 FILTERED = MAIN / "02-filtering" / "filtered_comments.jsonl"
 AGE_GROUPS = ("age_silent", "age_boomer", "age_X", "age_millennial", "age_Z", "age_young", "age_old")
 OTHER_GROUPS = (
@@ -88,11 +91,12 @@ def main() -> None:
     print(f"  {seeds:,} seeds in {threads:,} threads ({time.monotonic() - started:.0f} s)", flush=True)
 
     started = time.monotonic()
-    print(f"OP comment ids from {FILTERED.name} ({FILTERED.stat().st_size / 1e9:.0f} GB) ...", flush=True)
+    filtered = large_files.existing(FILTERED)  # DuckDB reads .zst as well
+    print(f"OP comment ids from {filtered.name} ({filtered.stat().st_size / 1e9:.0f} GB) ...", flush=True)
     con.execute(
         f"""COPY (
             SELECT DISTINCT {base36('id')} AS id
-            FROM read_json('{FILTERED}', columns = {{id: 'VARCHAR'}}, {JSON_OPTIONS})
+            FROM read_json('{filtered}', columns = {{id: 'VARCHAR'}}, {JSON_OPTIONS})
             ORDER BY id
         ) TO '{args.work_dir / 'op_ids.parquet'}' (FORMAT parquet)"""
     )

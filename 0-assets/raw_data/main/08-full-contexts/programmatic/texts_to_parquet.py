@@ -2,8 +2,9 @@
 
 The otacon extraction (otacon_output/, see ../../../../otacon past_commands/forest_text_extraction/
 REPORT.md) holds the original JSON lines of all discussion comments, the submissions and the
-submitters' comments, one NDJSON file per dump file (compressed to .ndjson.zst afterwards by
-compress_otacon_output.zsh; both forms are read). Their fields differ between years (e.g.
+submitters' comments, one NDJSON file per dump file. otacon writes them uncompressed (.ndjson);
+../../optional/compress_large_files.py can turn them into .ndjson.zst to save space. Either form is
+read, also mixed within one folder. Their fields differ between years (e.g.
 created_utc as a string in early dumps, author_flair_richtext only from 2019), so they are
 normalised here into one schema per kind:
 
@@ -20,8 +21,8 @@ file; finished files are skipped on a rerun.
 from __future__ import annotations
 
 import argparse
-import io
 import json
+import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
@@ -29,9 +30,10 @@ from pathlib import Path
 
 import pyarrow as pa
 import pyarrow.parquet as pq
-import zstandard
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[1] / "shared"))
+import large_files  # noqa: E402  (reads a file as it is or from its .zst archive)
 ROWS_PER_GROUP = 200_000
 
 COMMON = [("id", pa.int64()), ("author", pa.string()), ("flair_text", pa.string()),
@@ -83,11 +85,17 @@ def normalise(kind: str, d: dict) -> dict:
     return row
 
 
-def open_lines(source: Path):
-    if source.suffix == ".zst":
-        reader = zstandard.ZstdDecompressor(max_window_size=2**31).stream_reader(open(source, "rb"))
-        return io.TextIOWrapper(reader, encoding="utf-8")
-    return open(source, encoding="utf-8")
+def dump_files(folder: Path, pattern: str = "*") -> list[Path]:
+    """One source per dump file: NAME.ndjson as otacon writes it, or NAME.ndjson.zst.
+
+    If both are there (a fresh extraction next to an old archive, or an interrupted compression),
+    the uncompressed file is taken, as large_files.open_text() does for a single file.
+    """
+    found = {}
+    for suffix in (".ndjson.zst", ".ndjson"):
+        for source in folder.glob(pattern + suffix):
+            found[source.name[: -len(suffix)]] = source
+    return [found[name] for name in sorted(found)]
 
 
 def convert(source: Path, target: Path) -> int:
@@ -95,7 +103,7 @@ def convert(source: Path, target: Path) -> int:
     schema = SCHEMAS[kind]
     temporary = target.with_name(f".{target.name}.tmp")
     rows, count = [], 0
-    with open_lines(source) as lines, pq.ParquetWriter(temporary, schema, compression="zstd") as writer:
+    with large_files.open_text(source) as lines, pq.ParquetWriter(temporary, schema, compression="zstd") as writer:
         for line in lines:
             rows.append(normalise(kind, json.loads(line)))
             if len(rows) == ROWS_PER_GROUP:
@@ -118,8 +126,7 @@ def main() -> None:
     jobs = []
     for kind in ("RS", "RC"):
         (args.out_dir / kind).mkdir(parents=True, exist_ok=True)
-        sources = [*(args.source / kind).glob(f"{args.files}.ndjson"), *(args.source / kind).glob(f"{args.files}.ndjson.zst")]
-        for source in sorted(sources):
+        for source in dump_files(args.source / kind, args.files):
             target = args.out_dir / kind / f"{source.name.split('.')[0]}.parquet"
             if not target.exists():
                 jobs.append((source, target))

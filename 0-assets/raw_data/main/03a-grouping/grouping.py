@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from collections import defaultdict
 from contextlib import ExitStack
@@ -16,6 +17,8 @@ from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "shared"))
+import large_files  # noqa: E402  (reads a large input as it is or from its .zst archive)
 DEFAULT_INPUT = HERE.parent / "02-filtering" / "filtered_comments.jsonl"
 DEFAULT_OUTPUT_DIR = HERE / "grouped_subreddit_data"
 SUBREDDIT_LISTS_DIR = HERE / "subreddit_lists"
@@ -110,7 +113,7 @@ STATISTICS_GROUP_NAMES = tuple(group for group in GROUP_NAMES if group != AGE_GR
 
 
 def iter_comments(path: Path) -> Iterator[tuple[int, str, dict]]:
-    with path.open("r", encoding="utf-8") as input_file:
+    with large_files.open_text(path) as input_file:
         for line_number, line in enumerate(input_file, start=1):
             if not line.strip():
                 continue

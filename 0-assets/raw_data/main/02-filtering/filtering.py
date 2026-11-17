@@ -14,7 +14,8 @@
    separate file.
 8. The processing time is printed at the end.
 
-The input is streamed line by line and never loaded into memory as a whole.
+The input is streamed line by line and never loaded into memory as a whole. It may
+be compressed (second-attempt.jsonl.zst, see ../optional/compress_large_files.py).
 Strings inside the objects may contain line breaks, so a record that does not
 parse on its own is extended with the following lines until it does.
 """
@@ -24,12 +25,15 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 import time
 from datetime import timedelta
 from pathlib import Path
 from typing import Iterator
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "shared"))
+import large_files  # noqa: E402  (reads a large input as it is or from its .zst archive)
 DEFAULT_INPUT = (
     HERE.parent
     / "01-extraction_stage"
@@ -55,7 +59,7 @@ _loads = json.JSONDecoder(strict=False).decode
 def iter_json_records(path: Path) -> Iterator[tuple[dict, str]]:
     """Yield (object, raw_text) per JSON record, streaming; tolerates raw line breaks in strings."""
     pending = ""
-    with open(path, "r", encoding="utf-8", buffering=IO_BUFFER_SIZE) as f:
+    with large_files.open_text(path, buffering=IO_BUFFER_SIZE) as f:
         for line in f:
             if not pending:
                 if not line.strip():
@@ -95,7 +99,7 @@ def filter_comments(
     subreddits_output: Path,
 ) -> None:
     start = time.perf_counter()
-    total_bytes = input_path.stat().st_size
+    total_bytes = large_files.uncompressed_size(input_path)
 
     seen_ids: set = set()
     excluded_users: set[str] = set()
@@ -157,7 +161,7 @@ def filter_comments(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="Path to the raw .jsonl file.")
+    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="Path to the raw .jsonl file (or its .zst archive).")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Path to write the filtered .jsonl file.")
     parser.add_argument(
         "--excluded-users-output",

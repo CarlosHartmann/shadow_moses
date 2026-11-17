@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from collections import defaultdict
 from contextlib import ExitStack
@@ -15,6 +16,8 @@ from openpyxl import Workbook, load_workbook
 
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "shared"))
+import large_files  # noqa: E402  (reads a large input as it is or from its .zst archive)
 GROUPED_DIR = HERE.parent / "03a-grouping" / "grouped_subreddit_data"
 AGE_DIR = HERE.parent / "03b-age-grouping"
 # Files written by the 3b group_by scripts; both splits cover the same comments.
@@ -55,7 +58,7 @@ FAMILY_OF = {group: family for family in FAMILIES for group in family}
 
 
 def iter_comments(path: Path) -> Iterator[tuple[int, str, dict]]:
-    with path.open("r", encoding="utf-8") as input_file:
+    with large_files.open_text(path) as input_file:
         for line_number, line in enumerate(input_file, start=1):
             if not line.strip():
                 continue

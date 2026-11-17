@@ -84,3 +84,7 @@ __pycache__/
 0-assets/raw_data/main/08-full-contexts/programmatic/otacon_output/
 0-assets/raw_data/main/10-discussion-users/data/
 0-assets/raw_data/main/10-discussion-users/annotation_backup/
+# archives of large files (0-assets/raw_data/main/optional/compress_large_files.py)
+*.jsonl.zst
+*.zst.tmp
+0-assets/raw_data/main/optional/*.log

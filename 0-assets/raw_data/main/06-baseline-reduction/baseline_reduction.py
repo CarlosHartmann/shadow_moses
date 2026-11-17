@@ -2,6 +2,9 @@
 
 Only comments from subreddits in the given list (by default the list already handed off to
 the indexing process) are sampled, so the sample adds no subreddits to it.
+
+The input may be compressed (baseline.jsonl.zst, see ../optional/compress_large_files.py); the
+sample is the same either way.
 """
 
 from __future__ import annotations
@@ -19,6 +22,8 @@ from pathlib import Path
 
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "shared"))
+import large_files  # noqa: E402  (reads a large input as it is or from its .zst archive)
 DEFAULT_INPUT = (
     HERE.parent / "04-cross-subreddit-data" / "cross_subreddit_data" / "baseline.jsonl"
 )
@@ -39,6 +44,7 @@ def report_progress(
     next_percent: int,
 ) -> int:
     # tell() on a text file is disabled while iterating lines; the raw buffer position is close enough.
+    # For a compressed input it counts the uncompressed bytes, like input_size.
     position = input_file.buffer.tell()
     percent = min(100, position * 100 // input_size) if input_size else 100
     if percent >= next_percent:
@@ -81,12 +87,12 @@ def comment_quarter(line: str, line_number: int, subreddits: frozenset[str]) -> 
 
 def count_by_quarter(input_path: Path, subreddits: frozenset[str]) -> dict[str, int]:
     counts: dict[str, int] = defaultdict(int)
-    input_size = input_path.stat().st_size
+    input_size = large_files.uncompressed_size(input_path)
     started_at = time.monotonic()
     next_percent = 10
     print("Pass 1/3: counting comments by quarter.", flush=True)
     skipped = 0
-    with input_path.open("r", encoding="utf-8") as input_file:
+    with large_files.open_text(input_path) as input_file:
         for line_number, line in enumerate(input_file, start=1):
             quarter = comment_quarter(line, line_number, subreddits)
             if quarter is not None:
@@ -138,12 +144,12 @@ def select_line_numbers(
     reservoirs: dict[str, list[int]] = {quarter: [] for quarter in counts}
     seen: dict[str, int] = defaultdict(int)
     second_pass_counts: dict[str, int] = defaultdict(int)
-    input_size = input_path.stat().st_size
+    input_size = large_files.uncompressed_size(input_path)
     started_at = time.monotonic()
     next_percent = 10
     print("Pass 2/3: selecting the seeded sample.", flush=True)
 
-    with input_path.open("r", encoding="utf-8") as input_file:
+    with large_files.open_text(input_path) as input_file:
         for line_number, line in enumerate(input_file, start=1):
             quarter = comment_quarter(line, line_number, subreddits)
             if quarter is None:
@@ -187,7 +193,7 @@ def select_line_numbers(
 
 def write_sample(input_path: Path, output_path: Path, selected_lines: list[int]) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    input_size = input_path.stat().st_size
+    input_size = large_files.uncompressed_size(input_path)
     started_at = time.monotonic()
     next_percent = 10
     print("Pass 3/3: writing the sampled comments.", flush=True)
@@ -203,7 +209,7 @@ def write_sample(input_path: Path, output_path: Path, selected_lines: list[int])
         ) as output_file:
             temporary_path = Path(output_file.name)
             selected_index = 0
-            with input_path.open("r", encoding="utf-8") as input_file:
+            with large_files.open_text(input_path) as input_file:
                 for line_number, line in enumerate(input_file, start=1):
                     if (
                         selected_index < len(selected_lines)
